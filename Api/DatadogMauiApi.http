@@ -1,0 +1,6 @@
+@DatadogMauiApi_HostAddress = http://localhost:5090
+
+GET {{DatadogMauiApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

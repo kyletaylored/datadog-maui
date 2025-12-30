@@ -107,13 +107,21 @@ public class ApiService
         }
     }
 
-    public async Task<ConfigResponse?> GetConfigAsync()
+    public async Task<ConfigResponse?> GetConfigAsync(string? correlationId = null)
     {
         try
         {
             Console.WriteLine($"[ApiService] Fetching config from {_baseUrl}/config");
 
-            var response = await _httpClient.GetAsync($"{_baseUrl}/config");
+            var request = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/config");
+
+            // Add correlation ID header for Datadog correlation
+            if (!string.IsNullOrEmpty(correlationId))
+            {
+                request.Headers.Add("X-Correlation-ID", correlationId);
+            }
+
+            var response = await _httpClient.SendAsync(request);
 
             if (response.IsSuccessStatusCode)
             {

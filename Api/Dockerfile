@@ -21,4 +21,20 @@ EXPOSE 8080
 # Set environment to listen on all interfaces
 ENV ASPNETCORE_URLS=http://+:8080
 
+# Datadog configuration
+# These can be overridden via docker-compose.yml or docker run -e
+ENV DD_SERVICE=datadog-maui-api
+ENV DD_ENV=dev
+ENV DD_VERSION=1.0.0
+ENV DD_TRACE_ENABLED=true
+ENV DD_RUNTIME_METRICS_ENABLED=true
+ENV DD_LOGS_INJECTION=true
+
+# Optional: Set Datadog Agent host (defaults to localhost)
+# Override with -e DD_AGENT_HOST=<host> if using Datadog Agent container
+# ENV DD_AGENT_HOST=datadog-agent
+
+# Optional: Set Datadog site (defaults to datadoghq.com)
+# ENV DD_SITE=datadoghq.com
+
 ENTRYPOINT ["dotnet", "DatadogMauiApi.dll"]

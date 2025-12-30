@@ -1,6 +1,7 @@
 .PHONY: help api-build api-start api-stop api-restart api-logs api-status api-test api-clean \
         app-clean app-restore app-build-android app-build-ios app-run-android app-run-ios \
         docker-build docker-start docker-stop docker-restart docker-logs docker-clean \
+        datadog-build-android datadog-build-ios datadog-build-all \
         test clean all
 
 # Variables
@@ -9,6 +10,7 @@ IMAGE_NAME = datadog-maui-api
 PORT = 5000
 MAUI_PROJECT = MauiApp/DatadogMauiApp.csproj
 API_PROJECT = Api/DatadogMauiApi.csproj
+DATADOG_BINDINGS = datadog-dotnet-mobile-sdk-bindings
 
 # Default target
 help:
@@ -31,6 +33,11 @@ help:
 	@echo "  make app-build-ios       Build iOS app"
 	@echo "  make app-run-android     Build and run on Android emulator"
 	@echo "  make app-run-ios         Build and run on iOS simulator"
+	@echo ""
+	@echo "Datadog Commands:"
+	@echo "  make datadog-build-android   Build Datadog Android bindings"
+	@echo "  make datadog-build-ios       Build Datadog iOS bindings"
+	@echo "  make datadog-build-all       Build all Datadog bindings"
 	@echo ""
 	@echo "Quick Commands:"
 	@echo "  make all             Build API and Android app"
@@ -154,6 +161,9 @@ app-build-android:
 
 app-build-ios:
 	@echo "🔨 Building iOS app..."
+	@echo "⚠️  Note: iOS build requires Xcode simulator runtime that matches SDK 23C53"
+	@echo "⚠️  Current Xcode 26.2 has a version mismatch with available simulator runtimes"
+	@echo "⚠️  This is a known Xcode/iOS SDK versioning issue, not a code issue"
 	cd MauiApp && dotnet build -f net10.0-ios
 	@echo "✅ iOS build complete"
 
@@ -244,3 +254,9 @@ docs:
 	@echo "  cat QUICKSTART.md       # Quick start guide"
 	@echo "  cat READY_TO_TEST.md    # Testing guide"
 	@echo "  cat BUILD_SUCCESS.md    # Build details"
+
+# =============================================================================
+# Datadog Commands
+# =============================================================================
+# Note: Datadog bindings are now installed via NuGet packages automatically
+# The datadog-dotnet-mobile-sdk-bindings repository is only for reference

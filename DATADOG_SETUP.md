@@ -16,15 +16,25 @@
 ✅ **Android RUM**: Configured and tracking
 ✅ **Android Logs**: Forwarding to Datadog
 ✅ **NDK Crash Reports**: Enabled
+✅ **Session Replay**: Enabled with privacy masking! 🎉
 
-### Optional Features (Ready to Enable)
+### Optional Features (Packages Installed, Ready to Enable)
 
 📦 **Packages Installed:**
-- Session Replay (`Bcr.Datadog.Android.Sdk.SessionReplay`)
-- APM Tracing (`Bcr.Datadog.Android.Sdk.Trace`)
-- WebView Tracking (`Bcr.Datadog.Android.Sdk.WebView`)
+- ✅ Session Replay - **ENABLED!** (text/input/images masked, touches hidden)
+- ⚠️ APM Tracing (`Bcr.Datadog.Android.Sdk.Trace`) - API verification needed
+- ⚠️ WebView Tracking (`Bcr.Datadog.Android.Sdk.WebView`) - API verification needed
 
-**To enable these features, see [DATADOG_ADVANCED_FEATURES.md](DATADOG_ADVANCED_FEATURES.md)**
+**Working Session Replay API:**
+```csharp
+var sessionReplayConfig = new SessionReplayConfiguration.Builder(sampleRate)
+    .SetTextAndInputPrivacy(TextAndInputPrivacy.MaskAll)
+    .SetImagePrivacy(ImagePrivacy.MaskAll)
+    .SetTouchPrivacy(TouchPrivacy.Hide)
+    .Build();
+
+SessionReplay.Enable(sessionReplayConfig, Datadog.Instance);
+```
 
 ### What's Pending
 
@@ -34,7 +44,7 @@
 
 ## Quick Summary
 
-**SUCCESS!** Datadog is now fully initialized on Android! The issue was using the wrong namespace - it should be `Datadog.Android.*` not `Com.Datadog.Android.*`, and classes are prefixed with `DD` (like `DDConfiguration`).
+**SUCCESS!** Datadog is now fully initialized on Android with Session Replay!
 
 The Android app now has:
 - ✅ Core Datadog SDK initialized
@@ -42,8 +52,14 @@ The Android app now has:
 - ✅ Logs being forwarded to Datadog
 - ✅ NDK crash reports enabled
 - ✅ Long tasks, frustrations, and ANR tracking enabled
+- ✅ **Session Replay recording with privacy masking** 🎥
 
-Mobile telemetry is now being sent to Datadog! 🎉
+**Key Discovery:** The correct API for Session Replay uses:
+- `SessionReplayConfiguration.Builder(sampleRate)` - takes a single float, not an array
+- Individual privacy setters: `.SetTextAndInputPrivacy()`, `.SetImagePrivacy()`, `.SetTouchPrivacy()`
+- `SessionReplay.Enable(config, Datadog.Instance)` - requires the Datadog instance
+
+Mobile telemetry and session recordings are now being sent to Datadog! 🎉
 
 ---
 

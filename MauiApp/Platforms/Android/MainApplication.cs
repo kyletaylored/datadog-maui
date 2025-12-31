@@ -5,6 +5,7 @@ using Datadog.Android.Log;
 using Datadog.Android.Ndk;
 using Datadog.Android.Privacy;
 using Datadog.Android.Rum;
+using Datadog.Android.SessionReplay;
 using DatadogMauiApp.Config;
 
 namespace DatadogMauiApp;
@@ -81,11 +82,26 @@ public class MainApplication : MauiApplication
             _ = Datadog.Android.Rum.GlobalRumMonitor.Instance;
             _ = Datadog.Android.Rum.GlobalRumMonitor.Get();
 
-            Console.WriteLine("[Datadog] Successfully initialized for Android");
+            // Enable Session Replay
+            try
+            {
+                var sessionReplayConfig = new SessionReplayConfiguration.Builder(
+                    DatadogConfig.SessionReplaySampleRate
+                )
+                .SetTextAndInputPrivacy(TextAndInputPrivacy.MaskAll)
+                .SetImagePrivacy(ImagePrivacy.MaskAll)
+                .SetTouchPrivacy(TouchPrivacy.Hide)
+                .Build();
 
-            // TODO: Add Session Replay, APM Tracing, and WebView tracking
-            // These features require additional using statements and configuration
-            // See comments below for implementation details
+                Datadog.Android.SessionReplay.SessionReplay.Enable(sessionReplayConfig, Datadog.Android.Datadog.Instance);
+                Console.WriteLine("[Datadog] Session Replay enabled");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Datadog] Session Replay failed: {ex.Message}");
+            }
+
+            Console.WriteLine("[Datadog] Successfully initialized for Android");
         }
         catch (Exception ex)
         {
@@ -94,46 +110,18 @@ public class MainApplication : MauiApplication
         }
     }
 
-    /* TODO: Advanced Datadog Features
-     *
-     * To enable these features, add the following using statements:
-     * using Datadog.Android.SessionReplay;
-     * using Datadog.Android.Trace;
-     * using Datadog.Android.WebView;
-     *
-     * SESSION REPLAY:
-     * ---------------
-     * var sessionReplayConfig = new SessionReplayConfiguration.Builder(
-     *     new[] { DatadogConfig.SessionReplaySampleRate }
-     * )
-     *     .SetPrivacy(new SessionReplayPrivacy(
-     *         TextAndInputPrivacy.MaskAll,
-     *         ImagePrivacy.MaskAll,
-     *         TouchPrivacy.Hide
-     *     ))
-     *     .Build();
-     * SessionReplay.Enable(sessionReplayConfig);
-     * SessionReplay.Instance?.StartRecording();
+    /* TODO: Additional Datadog Features (APM Tracing, WebView Tracking)
      *
      * APM TRACING:
      * ------------
-     * var traceConfig = new TraceConfiguration.Builder().Build();
-     * Datadog.Android.Trace.Trace.Enable(traceConfig);
-     *
-     * var tracer = DatadogTracing.NewTracerBuilder(Datadog.Android.Datadog.Instance)
-     *     .WithServiceName(DatadogConfig.ServiceName)
-     *     .SetBundleWithRumEnabled(true)
-     *     .Build();
-     * GlobalDatadogTracer.RegisterIfAbsent(tracer);
+     * API needs verification. Package installed: Bcr.Datadog.Android.Sdk.Trace
+     * See DATADOG_ADVANCED_FEATURES.md for investigation notes
      *
      * WEBVIEW TRACKING:
      * -----------------
-     * To enable tracking for a specific WebView:
-     *
-     * webView.Settings.JavaScriptEnabled = true;
-     * WebViewTracking.Enable(webView, new[] { "example.com", "api.example.com" });
-     *
-     * Call this method in your WebView page after creating the WebView instance.
+     * Package installed: Bcr.Datadog.Android.Sdk.WebView
+     * Should enable tracking for WebViews in WebPortalPage
+     * See DATADOG_ADVANCED_FEATURES.md for guidance
      */
 
     protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();

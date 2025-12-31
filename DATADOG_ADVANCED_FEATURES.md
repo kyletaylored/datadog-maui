@@ -2,6 +2,25 @@
 
 This guide shows how to enable additional Datadog features: Session Replay, APM Tracing, and WebView tracking.
 
+⚠️ **UPDATE:** Session Replay is now working! The correct API has been discovered and implemented.
+
+**What works:**
+- Core Datadog SDK ✅
+- RUM (Real User Monitoring) ✅
+- Logs ✅
+- NDK Crash Reports ✅
+- **Session Replay ✅** (see below for correct API)
+
+**What needs API verification:**
+- APM Tracing (API mismatch - needs investigation)
+- WebView Tracking (not yet tested)
+
+**Correct Session Replay API (as of 2.21.0-pre.1):**
+The API differs from Datadog documentation - here's what actually works:
+- Constructor takes single `float` not `float[]`
+- Privacy settings use individual setters, not a `SessionReplayPrivacy` object
+- `Enable()` requires passing `Datadog.Instance` as second parameter
+
 ---
 
 ## Current Status
@@ -24,43 +43,52 @@ The packages are already installed in [DatadogMauiApp.csproj](MauiApp/DatadogMau
 
 ---
 
-## How to Enable Session Replay
+## ✅ How to Enable Session Replay (WORKING!)
 
 Session Replay records user sessions as video playback with privacy masking.
 
-### Step 1: Add Using Statements
+### Status: ENABLED in [MainApplication.cs:85-103](MauiApp/Platforms/Android/MainApplication.cs#L85-L103)
 
-In [MainApplication.cs](MauiApp/Platforms/Android/MainApplication.cs), add:
+### Correct Working Code
+
+The Session Replay feature is already enabled! Here's the working implementation:
 
 ```csharp
+// Using statements needed:
 using Datadog.Android.SessionReplay;
-```
+using Datadog.Android.Privacy;  // For TextAndInputPrivacy, ImagePrivacy, TouchPrivacy
 
-### Step 2: Enable Session Replay
-
-Add this code after RUM is enabled (around line 83):
-
-```csharp
 // Enable Session Replay with privacy settings
-var sessionReplayConfig = new SessionReplayConfiguration.Builder(
-    new[] { DatadogConfig.SessionReplaySampleRate }
-)
-    .SetPrivacy(new SessionReplayPrivacy(
-        TextAndInputPrivacy.MaskAll,      // Mask all text
-        ImagePrivacy.MaskAll,              // Mask all images
-        TouchPrivacy.Hide                  // Hide touch interactions
-    ))
+try
+{
+    var sessionReplayConfig = new SessionReplayConfiguration.Builder(
+        DatadogConfig.SessionReplaySampleRate  // Single float, not array!
+    )
+    .SetTextAndInputPrivacy(TextAndInputPrivacy.MaskAll)  // Individual setters
+    .SetImagePrivacy(ImagePrivacy.MaskAll)
+    .SetTouchPrivacy(TouchPrivacy.Hide)
     .Build();
 
-SessionReplay.Enable(sessionReplayConfig);
+    // Enable requires Datadog.Instance as second parameter
+    Datadog.Android.SessionReplay.SessionReplay.Enable(
+        sessionReplayConfig,
+        Datadog.Android.Datadog.Instance
+    );
 
-Console.WriteLine("[Datadog] Session Replay enabled with privacy masking");
-
-// Start recording
-SessionReplay.Instance?.StartRecording();
-
-Console.WriteLine("[Datadog] Session Replay recording started");
+    Console.WriteLine("[Datadog] Session Replay enabled");
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[Datadog] Session Replay failed: {ex.Message}");
+}
 ```
+
+**Key Differences from Documentation:**
+1. ✅ `Builder(float)` not `Builder(float[])`
+2. ✅ `.SetTextAndInputPrivacy()` not `.SetPrivacy(new SessionReplayPrivacy(...))`
+3. ✅ Individual privacy setters instead of privacy object
+4. ✅ `Enable(config, instance)` takes Datadog instance as second parameter
+5. ✅ No need to call `StartRecording()` - it starts automatically
 
 ### Privacy Settings
 

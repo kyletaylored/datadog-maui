@@ -14,7 +14,7 @@ make app-run-android   # Run on Android
 make status            # Check everything
 ```
 
-See [MAKEFILE_GUIDE.md](MAKEFILE_GUIDE.md) for complete Makefile documentation.
+Run `make help` to see all available commands.
 
 ## Project Structure
 
@@ -323,11 +323,26 @@ All telemetry events are logged to the console. In production, integrate with a 
 - Add unit and integration tests
 - Set up CI/CD pipelines
 
-## Resources
+## Documentation
 
+### Main Guides
+- [Quickstart Guide](QUICKSTART.md) - Get started quickly
+- [Documentation Index](docs/README.md) - All documentation
+
+### Setup & Configuration
+- [Datadog Agent Setup](docs/setup/DATADOG_AGENT_SETUP.md)
+- [Setup Status](docs/setup/SETUP_COMPLETE.md)
+
+### Feature Guides
+- [Building with Git Metadata](docs/guides/BUILD.md)
+- [Trace and Log Correlation](docs/guides/TRACE_LOG_CORRELATION.md)
+- [Git Metadata Integration](docs/guides/GIT_METADATA_INTEGRATION.md)
+
+### External Resources
 - [.NET MAUI Documentation](https://docs.microsoft.com/dotnet/maui)
 - [ASP.NET Core Documentation](https://docs.microsoft.com/aspnet/core)
 - [Docker Documentation](https://docs.docker.com)
+- [Datadog .NET APM](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core/)
 
 ## License
 

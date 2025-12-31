@@ -1,21 +1,20 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DatadogMauiApi.Models;
-using Datadog.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Datadog
-// Environment variables can also be set via docker-compose or Dockerfile
-// This provides defaults if not set externally
-Environment.SetEnvironmentVariable("DD_SERVICE", "datadog-maui-api");
-Environment.SetEnvironmentVariable("DD_ENV", "dev");
-Environment.SetEnvironmentVariable("DD_VERSION", "1.0.0");
-
-// Enable Datadog tracing
-Environment.SetEnvironmentVariable("DD_TRACE_ENABLED", "true");
-Environment.SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "true");
-Environment.SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
+// Configure logging with JSON formatting for Datadog
+builder.Logging.ClearProviders();
+builder.Logging.AddJsonConsole(options =>
+{
+    options.IncludeScopes = true;
+    options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
+    options.JsonWriterOptions = new System.Text.Json.JsonWriterOptions
+    {
+        Indented = false
+    };
+});
 
 // Add services to the container.
 builder.Services.AddOpenApi();
@@ -50,9 +49,6 @@ app.UseStaticFiles();
 // Health check endpoint
 app.MapGet("/health", (ILogger<Program> logger) =>
 {
-    using var scope = Tracer.Instance.StartActive("health.check");
-    scope.Span.SetTag("check.type", "health");
-
     logger.LogInformation("[Health Check] Service is healthy at {Time}", DateTime.UtcNow);
     return Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
 })
@@ -61,12 +57,9 @@ app.MapGet("/health", (ILogger<Program> logger) =>
 // Config endpoint - returns dynamic configuration
 app.MapGet("/config", (ILogger<Program> logger, HttpContext context) =>
 {
-    using var scope = Tracer.Instance.StartActive("config.get");
-
     // Extract correlation ID from headers if present
     if (context.Request.Headers.TryGetValue("X-Correlation-ID", out var correlationId))
     {
-        scope.Span.SetTag("correlation.id", correlationId.ToString());
         logger.LogInformation("[Config] Configuration requested with CorrelationId: {CorrelationId}", correlationId);
     }
     else
@@ -93,12 +86,6 @@ app.MapGet("/config", (ILogger<Program> logger, HttpContext context) =>
 // Data submission endpoint
 app.MapPost("/data", (DataSubmission submission, ILogger<Program> logger) =>
 {
-    using var scope = Tracer.Instance.StartActive("data.submit");
-
-    // Tag the trace with correlation ID for RUM correlation
-    scope.Span.SetTag("correlation.id", submission.CorrelationId);
-    scope.Span.SetTag("session.name", submission.SessionName);
-    scope.Span.SetTag("numeric.value", submission.NumericValue.ToString());
 
     logger.LogInformation(
         "[Data Submission] CorrelationId: {CorrelationId}, SessionName: {SessionName}, Notes: {Notes}, NumericValue: {NumericValue}",
@@ -113,13 +100,12 @@ app.MapPost("/data", (DataSubmission submission, ILogger<Program> logger) =>
 
     logger.LogInformation("[Data Store] Total submissions: {Count}", dataStore.Count);
 
-    return Results.Ok(new {
+    return Results.Ok(new
+    {
         isSuccessful = true,
         message = "Data received successfully",
         correlationId = submission.CorrelationId,
-        timestamp = DateTime.UtcNow,
-        traceId = scope.Span.TraceId.ToString(),
-        spanId = scope.Span.SpanId.ToString()
+        timestamp = DateTime.UtcNow
     });
 })
 .WithName("SubmitData");
@@ -127,9 +113,6 @@ app.MapPost("/data", (DataSubmission submission, ILogger<Program> logger) =>
 // Bonus: Get all submitted data (for debugging)
 app.MapGet("/data", (ILogger<Program> logger) =>
 {
-    using var scope = Tracer.Instance.StartActive("data.getall");
-    scope.Span.SetTag("data.count", dataStore.Count.ToString());
-
     logger.LogInformation("[Data Retrieval] Fetching all submissions. Count: {Count}", dataStore.Count);
     return Results.Ok(dataStore.ToList());
 })

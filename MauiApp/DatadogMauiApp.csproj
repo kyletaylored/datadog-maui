@@ -19,9 +19,64 @@
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
         <ApplicationVersion>1</ApplicationVersion>
 
-        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+        <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">18.0</SupportedOSPlatformVersion>
         <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">26.0</SupportedOSPlatformVersion>
     </PropertyGroup>
+
+    <!-- Datadog RUM Configuration Properties -->
+    <!-- These can be set via command line or read from environment variables -->
+    <PropertyGroup>
+        <!-- Android RUM credentials (from MSBuild properties or environment) -->
+        <AndroidClientToken Condition="'$(AndroidClientToken)' == ''">$(DD_RUM_ANDROID_CLIENT_TOKEN)</AndroidClientToken>
+        <AndroidApplicationId Condition="'$(AndroidApplicationId)' == ''">$(DD_RUM_ANDROID_APPLICATION_ID)</AndroidApplicationId>
+
+        <!-- iOS RUM credentials (from MSBuild properties or environment) -->
+        <IosClientToken Condition="'$(IosClientToken)' == ''">$(DD_RUM_IOS_CLIENT_TOKEN)</IosClientToken>
+        <IosApplicationId Condition="'$(IosApplicationId)' == ''">$(DD_RUM_IOS_APPLICATION_ID)</IosApplicationId>
+    </PropertyGroup>
+
+    <!-- Generate Android runtime config file with credentials -->
+    <Target Name="GenerateAndroidRumConfig" BeforeTargets="BeforeBuild" Condition="'$(TargetFramework)' == 'net10.0-android'">
+        <PropertyGroup>
+            <AndroidRumConfigFile>$(MSBuildProjectDirectory)/Platforms/Android/datadog-rum.config</AndroidRumConfigFile>
+            <AndroidRumConfigContent>DD_RUM_ANDROID_CLIENT_TOKEN=$(AndroidClientToken)%0ADD_RUM_ANDROID_APPLICATION_ID=$(AndroidApplicationId)</AndroidRumConfigContent>
+        </PropertyGroup>
+        <Message Text="[MSBuild] 🐕 Generating Android RUM config file..." Importance="high" />
+        <Message Text="[MSBuild]   Client Token: $(AndroidClientToken)" Importance="high" Condition="'$(AndroidClientToken)' != ''" />
+        <Message Text="[MSBuild]   Application ID: $(AndroidApplicationId)" Importance="high" Condition="'$(AndroidApplicationId)' != ''" />
+        <Warning Text="[MSBuild] ⚠️  No Android RUM credentials found! App will use placeholder values." Condition="'$(AndroidClientToken)' == '' AND '$(DD_RUM_ANDROID_CLIENT_TOKEN)' == ''" />
+        <WriteLinesToFile
+            File="$(AndroidRumConfigFile)"
+            Lines="DD_RUM_ANDROID_CLIENT_TOKEN=$(AndroidClientToken);DD_RUM_ANDROID_APPLICATION_ID=$(AndroidApplicationId)"
+            Overwrite="true"
+            Condition="'$(AndroidClientToken)' != ''" />
+    </Target>
+
+    <!-- Generate iOS runtime config file with credentials -->
+    <Target Name="GenerateIosRumConfig" BeforeTargets="BeforeBuild" Condition="'$(TargetFramework)' == 'net10.0-ios'">
+        <PropertyGroup>
+            <IosRumConfigFile>$(MSBuildProjectDirectory)/Platforms/iOS/datadog-rum.config</IosRumConfigFile>
+        </PropertyGroup>
+        <Message Text="[MSBuild] 🐕 Generating iOS RUM config file..." Importance="high" />
+        <Message Text="[MSBuild]   Client Token: $(IosClientToken)" Importance="high" Condition="'$(IosClientToken)' != ''" />
+        <Message Text="[MSBuild]   Application ID: $(IosApplicationId)" Importance="high" Condition="'$(IosApplicationId)' != ''" />
+        <Warning Text="[MSBuild] ⚠️  No iOS RUM credentials found! App will use placeholder values." Condition="'$(IosClientToken)' == '' AND '$(DD_RUM_IOS_CLIENT_TOKEN)' == ''" />
+        <WriteLinesToFile
+            File="$(IosRumConfigFile)"
+            Lines="DD_RUM_IOS_CLIENT_TOKEN=$(IosClientToken);DD_RUM_IOS_APPLICATION_ID=$(IosApplicationId)"
+            Overwrite="true"
+            Condition="'$(IosClientToken)' != ''" />
+    </Target>
+
+    <!-- Include Android config file as embedded resource -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
+        <EmbeddedResource Include="Platforms/Android/datadog-rum.config" Condition="Exists('Platforms/Android/datadog-rum.config')" />
+    </ItemGroup>
+
+    <!-- Include iOS config file as embedded resource -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-ios'">
+        <EmbeddedResource Include="Platforms/iOS/datadog-rum.config" Condition="Exists('Platforms/iOS/datadog-rum.config')" />
+    </ItemGroup>
 
     <ItemGroup>
         <!-- App Icon -->

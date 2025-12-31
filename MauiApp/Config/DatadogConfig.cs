@@ -1,25 +1,95 @@
+using System.Reflection;
+
 namespace DatadogMauiApp.Config;
 
 public static class DatadogConfig
 {
-    // Platform-specific credentials
-    // Android credentials
-    private const string AndroidClientToken = "REDACTED_CLIENT_TOKEN_1";
-    private const string AndroidRumApplicationId = "REDACTED_APP_ID_3";
+    // Platform-specific credentials (fallback defaults)
+    private const string DefaultAndroidClientToken = "PLACEHOLDER_ANDROID_CLIENT_TOKEN";
+    private const string DefaultAndroidRumApplicationId = "PLACEHOLDER_ANDROID_APPLICATION_ID";
+    private const string DefaultIosClientToken = "PLACEHOLDER_IOS_CLIENT_TOKEN";
+    private const string DefaultIosRumApplicationId = "PLACEHOLDER_IOS_APPLICATION_ID";
 
-    // iOS credentials
-    private const string IosClientToken = "REDACTED_CLIENT_TOKEN_2";
-    private const string IosRumApplicationId = "REDACTED_APP_ID_2";
+    // Cached credentials loaded from embedded config file
+    private static Dictionary<string, string>? _cachedCredentials;
+
+    /// <summary>
+    /// Load credentials from embedded config file (generated at build time)
+    /// Priority: Embedded Config File > Environment Variable > Default Placeholder
+    /// </summary>
+    private static Dictionary<string, string> LoadCredentials()
+    {
+        if (_cachedCredentials != null)
+            return _cachedCredentials;
+
+        _cachedCredentials = new Dictionary<string, string>();
+
+#if ANDROID
+        var resourceName = "DatadogMauiApp.Platforms.Android.datadog-rum.config";
+#elif IOS
+        var resourceName = "DatadogMauiApp.Platforms.iOS.datadog-rum.config";
+#else
+        return _cachedCredentials;
+#endif
+
+        try
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+
+            if (stream != null)
+            {
+                using var reader = new StreamReader(stream);
+                var content = reader.ReadToEnd();
+
+                // Parse the config file (format: KEY=VALUE\nKEY=VALUE)
+                foreach (var line in content.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    var parts = line.Trim().Split('=', 2);
+                    if (parts.Length == 2)
+                    {
+                        var key = parts[0].Trim();
+                        var value = parts[1].Trim();
+                        _cachedCredentials[key] = value;
+                        Console.WriteLine($"[DatadogConfig]   {key} = {value.Substring(0, Math.Min(10, value.Length))}...");
+                    }
+                }
+
+                Console.WriteLine($"[DatadogConfig] ✅ Loaded {_cachedCredentials.Count} credentials from embedded config file");
+            }
+            else
+            {
+                Console.WriteLine($"[DatadogConfig] ⚠️  Config file not found in embedded resources");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[DatadogConfig] ⚠️  Failed to load credentials: {ex.Message}");
+        }
+
+        return _cachedCredentials;
+    }
 
     // Get platform-specific client token
+    // Priority: Embedded Config > Environment Variable > Default Placeholder
     public static string ClientToken
     {
         get
         {
 #if ANDROID
-            return AndroidClientToken;
+            var creds = LoadCredentials();
+            if (creds.TryGetValue("DD_RUM_ANDROID_CLIENT_TOKEN", out var configToken) && !string.IsNullOrEmpty(configToken))
+                return configToken;
+
+            var envToken = System.Environment.GetEnvironmentVariable("DD_RUM_ANDROID_CLIENT_TOKEN");
+            return !string.IsNullOrEmpty(envToken) ? envToken : DefaultAndroidClientToken;
 #elif IOS
-            return IosClientToken;
+            var creds = LoadCredentials();
+            if (creds.TryGetValue("DD_RUM_IOS_CLIENT_TOKEN", out var configToken) && !string.IsNullOrEmpty(configToken))
+                return configToken;
+
+            var envToken = System.Environment.GetEnvironmentVariable("DD_RUM_IOS_CLIENT_TOKEN");
+            return !string.IsNullOrEmpty(envToken) ? envToken : DefaultIosClientToken;
 #else
             return string.Empty;
 #endif
@@ -27,14 +97,25 @@ public static class DatadogConfig
     }
 
     // Get platform-specific RUM Application ID
+    // Priority: Embedded Config > Environment Variable > Default Placeholder
     public static string RumApplicationId
     {
         get
         {
 #if ANDROID
-            return AndroidRumApplicationId;
+            var creds = LoadCredentials();
+            if (creds.TryGetValue("DD_RUM_ANDROID_APPLICATION_ID", out var configAppId) && !string.IsNullOrEmpty(configAppId))
+                return configAppId;
+
+            var envAppId = System.Environment.GetEnvironmentVariable("DD_RUM_ANDROID_APPLICATION_ID");
+            return !string.IsNullOrEmpty(envAppId) ? envAppId : DefaultAndroidRumApplicationId;
 #elif IOS
-            return IosRumApplicationId;
+            var creds = LoadCredentials();
+            if (creds.TryGetValue("DD_RUM_IOS_APPLICATION_ID", out var configAppId) && !string.IsNullOrEmpty(configAppId))
+                return configAppId;
+
+            var envAppId = System.Environment.GetEnvironmentVariable("DD_RUM_IOS_APPLICATION_ID");
+            return !string.IsNullOrEmpty(envAppId) ? envAppId : DefaultIosRumApplicationId;
 #else
             return string.Empty;
 #endif

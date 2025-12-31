@@ -4,6 +4,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Datadog MAUI - Web Portal</title>
+    <script>
+        (function(h,o,u,n,d) {
+            h=h[d]=h[d]||{q:[],onReady:function(c){h.q.push(c)}}
+            d=o.createElement(u);d.async=1;d.src=n
+            n=o.getElementsByTagName(u)[0];n.parentNode.insertBefore(d,n)
+        })(window,document,'script','https://www.datadoghq-browser-agent.com/us1/v6/datadog-rum.js','DD_RUM')
+        window.DD_RUM.onReady(function() {
+            window.DD_RUM.init({
+            clientToken: 'PLACEHOLDER_CLIENT_TOKEN',
+            applicationId: 'PLACEHOLDER_APPLICATION_ID',
+            site: 'datadoghq.com',
+            service: 'datadog-maui-web',
+            env: 'local',
+            version: '1.0.0',
+            sessionSampleRate: 100,
+            sessionReplaySampleRate: 100,
+            trackBfcacheViews: true,
+            defaultPrivacyLevel: 'mask-user-input',
+            });
+        })
+    </script>
     <style>
         * {
             margin: 0;

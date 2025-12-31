@@ -2,6 +2,7 @@
         app-clean app-restore app-build-android app-build-ios app-run-android app-run-ios \
         docker-build docker-start docker-stop docker-restart docker-logs docker-clean \
         datadog-build-android datadog-build-ios datadog-build-all \
+        agent-logs logs-all api-build-simple status integration-test docs \
         test clean all
 
 # Variables
@@ -16,15 +17,17 @@ DATADOG_BINDINGS = datadog-dotnet-mobile-sdk-bindings
 help:
 	@echo "Datadog MAUI Project - Available Commands"
 	@echo ""
-	@echo "API Commands (Docker):"
-	@echo "  make api-build       Build Docker image for API"
-	@echo "  make api-start       Start API container"
-	@echo "  make api-stop        Stop API container"
-	@echo "  make api-restart     Restart API container"
+	@echo "API Commands (Docker + Datadog):"
+	@echo "  make api-build       Build Docker images"
+	@echo "  make api-start       Start API and Datadog Agent containers"
+	@echo "  make api-stop        Stop all containers"
+	@echo "  make api-restart     Restart all containers"
 	@echo "  make api-logs        Show API logs (follow mode)"
-	@echo "  make api-status      Show container status"
+	@echo "  make agent-logs      Show Datadog Agent logs"
+	@echo "  make logs-all        Show all logs"
+	@echo "  make api-status      Show container and agent status"
 	@echo "  make api-test        Test all API endpoints"
-	@echo "  make api-clean       Remove container and image"
+	@echo "  make api-clean       Remove containers, images, and volumes"
 	@echo ""
 	@echo "Mobile App Commands:"
 	@echo "  make app-clean       Clean app build artifacts"
@@ -33,6 +36,9 @@ help:
 	@echo "  make app-build-ios       Build iOS app"
 	@echo "  make app-run-android     Build and run on Android emulator"
 	@echo "  make app-run-ios         Build and run on iOS simulator"
+	@echo "  make app-logs-android    View Android logs (filtered for Datadog)"
+	@echo "  make app-logs-android-all View all Android logs"
+	@echo "  make app-logs-clear      Clear Android logs"
 	@echo ""
 	@echo "Datadog Commands:"
 	@echo "  make datadog-build-android   Build Datadog Android bindings"
@@ -55,32 +61,31 @@ help:
 
 api-build: docker-build
 docker-build:
-	@echo "🔨 Building Docker image..."
+	@echo "🔨 Building Docker images..."
+	@bash ./set-git-metadata.sh > /dev/null 2>&1 || true
+	COMPOSE_BAKE=true docker-compose build
+	@echo "✅ Images built successfully"
+
+api-build-simple:
+	@echo "🔨 Building API Docker image (simple)..."
 	cd Api && docker build --load -t $(IMAGE_NAME) .
 	@echo "✅ Image built successfully: $(IMAGE_NAME)"
 
 api-start: docker-start
 docker-start:
-	@if docker ps -a --format '{{.Names}}' | grep -q "^$(CONTAINER_NAME)$$"; then \
-		echo "📦 Container exists, starting..."; \
-		docker start $(CONTAINER_NAME); \
-	else \
-		echo "📦 Creating and starting new container..."; \
-		docker run -d -p $(PORT):8080 --name $(CONTAINER_NAME) $(IMAGE_NAME); \
-	fi
-	@echo "✅ API started at http://localhost:$(PORT)"
+	@echo "🚀 Starting containers with docker-compose..."
+	docker-compose up -d
+	@echo "✅ All services started"
+	@echo "   API: http://localhost:$(PORT)"
 	@echo "   Android: http://10.0.2.2:$(PORT)"
 	@echo "   iOS: http://localhost:$(PORT)"
+	@echo "   Datadog Agent: http://localhost:8126"
 
 api-stop: docker-stop
 docker-stop:
-	@if docker ps --format '{{.Names}}' | grep -q "^$(CONTAINER_NAME)$$"; then \
-		echo "🛑 Stopping container..."; \
-		docker stop $(CONTAINER_NAME); \
-		echo "✅ Container stopped"; \
-	else \
-		echo "ℹ️  Container is not running"; \
-	fi
+	@echo "🛑 Stopping containers with docker-compose..."
+	docker-compose down
+	@echo "✅ All containers stopped"
 
 api-restart: docker-restart
 docker-restart: api-stop
@@ -89,24 +94,24 @@ docker-restart: api-stop
 
 api-logs: docker-logs
 docker-logs:
-	@if docker ps -a --format '{{.Names}}' | grep -q "^$(CONTAINER_NAME)$$"; then \
-		echo "📋 Showing logs (Ctrl+C to exit)..."; \
-		docker logs -f $(CONTAINER_NAME); \
-	else \
-		echo "❌ Container does not exist"; \
-		exit 1; \
-	fi
+	@echo "📋 Showing API logs (Ctrl+C to exit)..."
+	docker-compose logs -f api
+
+agent-logs:
+	@echo "📋 Showing Datadog Agent logs (Ctrl+C to exit)..."
+	docker-compose logs -f datadog-agent
+
+logs-all:
+	@echo "📋 Showing all logs (Ctrl+C to exit)..."
+	docker-compose logs -f
 
 api-status: docker-status
 docker-status:
 	@echo "📊 Container Status:"
-	@if docker ps --format '{{.Names}}' | grep -q "^$(CONTAINER_NAME)$$"; then \
-		docker ps --filter "name=$(CONTAINER_NAME)" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"; \
-		echo ""; \
-		echo "✅ API is running"; \
-	else \
-		echo "❌ API is not running"; \
-	fi
+	@docker-compose ps
+	@echo ""
+	@echo "📈 Datadog Agent Status:"
+	@docker exec datadog-agent agent status 2>/dev/null | head -20 || echo "❌ Agent not running"
 
 api-test:
 	@echo "🧪 Testing API endpoints..."
@@ -128,16 +133,8 @@ api-test:
 
 api-clean: docker-clean
 docker-clean:
-	@echo "🧹 Cleaning up..."
-	@if docker ps -a --format '{{.Names}}' | grep -q "^$(CONTAINER_NAME)$$"; then \
-		echo "Stopping and removing container..."; \
-		docker stop $(CONTAINER_NAME) 2>/dev/null || true; \
-		docker rm $(CONTAINER_NAME) 2>/dev/null || true; \
-	fi
-	@if docker images --format '{{.Repository}}' | grep -q "^$(IMAGE_NAME)$$"; then \
-		echo "Removing image..."; \
-		docker rmi $(IMAGE_NAME) 2>/dev/null || true; \
-	fi
+	@echo "🧹 Cleaning up containers and images..."
+	docker-compose down --rmi local --volumes
 	@echo "✅ Cleanup complete"
 
 # =============================================================================
@@ -156,7 +153,7 @@ app-restore:
 
 app-build-android:
 	@echo "🔨 Building Android app..."
-	cd MauiApp && dotnet build -f net10.0-android
+	@bash -c 'source ./set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && /usr/local/share/dotnet/dotnet build -f net10.0-android'
 	@echo "✅ Android build complete"
 
 app-build-ios:
@@ -164,18 +161,50 @@ app-build-ios:
 	@echo "⚠️  Note: iOS build requires Xcode simulator runtime that matches SDK 23C53"
 	@echo "⚠️  Current Xcode 26.2 has a version mismatch with available simulator runtimes"
 	@echo "⚠️  This is a known Xcode/iOS SDK versioning issue, not a code issue"
-	cd MauiApp && dotnet build -f net10.0-ios
+	@bash -c 'source ./set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && dotnet build -f net10.0-ios'
 	@echo "✅ iOS build complete"
 
 app-run-android:
 	@echo "🚀 Building and running Android app..."
 	@echo "   Make sure Android emulator is running!"
-	cd MauiApp && dotnet build -t:Run -f net10.0-android
+	@bash -c 'source ./set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && /usr/local/share/dotnet/dotnet build -t:Run -f net10.0-android'
 
 app-run-ios:
 	@echo "🚀 Building and running iOS app..."
 	@echo "   Make sure iOS simulator is running!"
-	cd MauiApp && dotnet build -t:Run -f net10.0-ios
+	@bash -c 'source ./set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && dotnet build -t:Run -f net10.0-ios'
+
+# View Android logs
+app-logs-android:
+	@echo "📱 Viewing Android logs (filtering for Datadog and app output)..."
+	@echo "   Press Ctrl+C to exit"
+	@if command -v adb >/dev/null 2>&1; then \
+		adb logcat | grep -E "\[Datadog\]|mono-stdout|DatadogMauiApp"; \
+	else \
+		echo "❌ adb not found in PATH"; \
+		echo "Try: ~/Library/Android/sdk/platform-tools/adb logcat | grep '\[Datadog\]'"; \
+	fi
+
+# View Android logs (all)
+app-logs-android-all:
+	@echo "📱 Viewing all Android logs..."
+	@echo "   Press Ctrl+C to exit"
+	@if command -v adb >/dev/null 2>&1; then \
+		adb logcat; \
+	else \
+		echo "❌ adb not found in PATH"; \
+		echo "Try: ~/Library/Android/sdk/platform-tools/adb logcat"; \
+	fi
+
+# Clear Android logs
+app-logs-clear:
+	@echo "🧹 Clearing Android logs..."
+	@if command -v adb >/dev/null 2>&1; then \
+		adb logcat -c; \
+		echo "✅ Logs cleared"; \
+	else \
+		echo "❌ adb not found in PATH"; \
+	fi
 
 # =============================================================================
 # Composite Commands
@@ -243,17 +272,17 @@ integration-test:
 
 # View all documentation
 docs:
-	@echo "📚 Documentation Files:"
+	@echo "📚 Documentation:"
 	@echo ""
-	@ls -1 *.md | while read file; do \
-		echo "  📄 $$file"; \
-	done
+	@echo "Main Documentation:"
+	@echo "  📄 README.md              # Project overview and setup"
+	@echo "  📄 QUICKSTART.md          # Quick start guide"
 	@echo ""
-	@echo "Quick links:"
-	@echo "  cat README.md           # Full documentation"
-	@echo "  cat QUICKSTART.md       # Quick start guide"
-	@echo "  cat READY_TO_TEST.md    # Testing guide"
-	@echo "  cat BUILD_SUCCESS.md    # Build details"
+	@echo "Detailed Guides:"
+	@echo "  📁 docs/                  # All detailed documentation"
+	@echo "     - setup/               # Setup guides"
+	@echo "     - guides/              # Feature guides"
+	@echo "     - reference/           # Technical reference"
 
 # =============================================================================
 # Datadog Commands

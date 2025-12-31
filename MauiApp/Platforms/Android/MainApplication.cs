@@ -6,6 +6,7 @@ using Datadog.Android.Ndk;
 using Datadog.Android.Privacy;
 using Datadog.Android.Rum;
 using Datadog.Android.SessionReplay;
+using Datadog.Android.Trace;
 using DatadogMauiApp.Config;
 
 namespace DatadogMauiApp;
@@ -99,6 +100,18 @@ public class MainApplication : MauiApplication
             catch (Exception ex)
             {
                 Console.WriteLine($"[Datadog] Session Replay failed: {ex.Message}");
+            }
+
+            // Enable APM Tracing
+            try
+            {
+                var traceConfig = new TraceConfiguration.Builder().Build();
+                Datadog.Android.Trace.Trace.Enable(traceConfig, Datadog.Android.Datadog.Instance);
+                Console.WriteLine("[Datadog] APM Tracing enabled");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Datadog] APM Tracing failed: {ex.Message}");
             }
 
             Console.WriteLine("[Datadog] Successfully initialized for Android");

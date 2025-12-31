@@ -296,6 +296,8 @@ $RECYCLE.BIN/
 # Local development settings
 *.local.json
 local-settings.json
+.env
+.claude
 
 # Test coverage
 coverage/
@@ -319,3 +321,6 @@ BenchmarkDotNet.Artifacts/
 
 # manage-api.sh is now replaced by Makefile, but we'll keep it
 # manage-api.sh
+# Datadog RUM config files (generated at build time)
+MauiApp/Platforms/Android/datadog-rum.config
+MauiApp/Platforms/iOS/datadog-rum.config

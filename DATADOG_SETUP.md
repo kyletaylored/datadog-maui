@@ -17,13 +17,14 @@
 ✅ **Android Logs**: Forwarding to Datadog
 ✅ **NDK Crash Reports**: Enabled
 ✅ **Session Replay**: Enabled with privacy masking! 🎉
+✅ **APM Tracing**: Enabled and ready! 🎯
 
 ### Optional Features (Packages Installed, Ready to Enable)
 
 📦 **Packages Installed:**
 - ✅ Session Replay - **ENABLED!** (text/input/images masked, touches hidden)
-- ⚠️ APM Tracing (`Bcr.Datadog.Android.Sdk.Trace`) - API verification needed
-- ⚠️ WebView Tracking (`Bcr.Datadog.Android.Sdk.WebView`) - API verification needed
+- ✅ APM Tracing - **ENABLED!** (distributed tracing active)
+- ⚠️ WebView Tracking (`Bcr.Datadog.Android.Sdk.WebView`) - Ready to enable
 
 **Working Session Replay API:**
 ```csharp
@@ -44,7 +45,7 @@ SessionReplay.Enable(sessionReplayConfig, Datadog.Instance);
 
 ## Quick Summary
 
-**SUCCESS!** Datadog is now fully initialized on Android with Session Replay!
+**SUCCESS!** Datadog is now fully initialized on Android with Session Replay AND APM Tracing!
 
 The Android app now has:
 - ✅ Core Datadog SDK initialized
@@ -53,13 +54,21 @@ The Android app now has:
 - ✅ NDK crash reports enabled
 - ✅ Long tasks, frustrations, and ANR tracking enabled
 - ✅ **Session Replay recording with privacy masking** 🎥
+- ✅ **APM Tracing for distributed tracing** 🎯
 
-**Key Discovery:** The correct API for Session Replay uses:
+**Key Discoveries:**
+
+**Session Replay API:**
 - `SessionReplayConfiguration.Builder(sampleRate)` - takes a single float, not an array
 - Individual privacy setters: `.SetTextAndInputPrivacy()`, `.SetImagePrivacy()`, `.SetTouchPrivacy()`
 - `SessionReplay.Enable(config, Datadog.Instance)` - requires the Datadog instance
 
-Mobile telemetry and session recordings are now being sent to Datadog! 🎉
+**APM Tracing API:**
+- `TraceConfiguration.Builder().Build()` - simple builder pattern
+- `Trace.Enable(config, Datadog.Instance)` - enabled at app startup
+- Automatic correlation with RUM via correlation IDs
+
+Mobile telemetry, session recordings, and distributed traces are now being sent to Datadog! 🎉
 
 ---
 

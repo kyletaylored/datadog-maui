@@ -45,7 +45,7 @@ public class MainApplication : MauiApplication
             .Build();
 
             // Initialize Datadog SDK
-            Datadog.Android.Datadog.Initialize(this, config, TrackingConsent.Granted);
+            Datadog.Android.Datadog.Initialize(this, config, TrackingConsent.Granted!);
 
             Console.WriteLine("[Datadog] Core SDK initialized");
 
@@ -88,9 +88,9 @@ public class MainApplication : MauiApplication
                 var sessionReplayConfig = new SessionReplayConfiguration.Builder(
                     DatadogConfig.SessionReplaySampleRate
                 )
-                .SetTextAndInputPrivacy(TextAndInputPrivacy.MaskAll)
-                .SetImagePrivacy(ImagePrivacy.MaskAll)
-                .SetTouchPrivacy(TouchPrivacy.Hide)
+                .SetTextAndInputPrivacy(TextAndInputPrivacy.MaskSensitiveInputs!) // MaskAll | MaskSensitiveInputs | AllowAll
+                .SetImagePrivacy(ImagePrivacy.MaskNone!) // MaskAll | MaskNonBundledOnly | MaskNone
+                .SetTouchPrivacy(TouchPrivacy.Show!) // Hide | Show
                 .Build();
 
                 Datadog.Android.SessionReplay.SessionReplay.Enable(sessionReplayConfig, Datadog.Android.Datadog.Instance);

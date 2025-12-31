@@ -13,6 +13,11 @@
             Icon="home.png" />
 
         <ShellContent
+            Title="API Test"
+            ContentTemplate="{DataTemplate pages:ApiTestPage}"
+            Icon="settings.png" />
+
+        <ShellContent
             Title="Web Portal"
             ContentTemplate="{DataTemplate pages:WebPortalPage}"
             Icon="web.png" />

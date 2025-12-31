@@ -17,20 +17,20 @@ public partial class DashboardPage : ContentPage
         // Validate inputs
         if (string.IsNullOrWhiteSpace(SessionNameEntry.Text))
         {
-            await DisplayAlert("Validation Error", "Session Name is required", "OK");
+            await DisplayAlertAsync("Validation Error", "Session Name is required", "OK");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(NotesEditor.Text))
         {
-            await DisplayAlert("Validation Error", "Notes are required", "OK");
+            await DisplayAlertAsync("Validation Error", "Notes are required", "OK");
             return;
         }
 
         if (string.IsNullOrWhiteSpace(NumericValueEntry.Text) ||
             !decimal.TryParse(NumericValueEntry.Text, out var numericValue))
         {
-            await DisplayAlert("Validation Error", "Please enter a valid numeric value", "OK");
+            await DisplayAlertAsync("Validation Error", "Please enter a valid numeric value", "OK");
             return;
         }
 
@@ -64,20 +64,20 @@ public partial class DashboardPage : ContentPage
                 NotesEditor.Text = string.Empty;
                 NumericValueEntry.Text = string.Empty;
 
-                await DisplayAlert("Success", "Data submitted successfully!", "OK");
+                await DisplayAlertAsync("Success", "Data submitted successfully!", "OK");
             }
             else
             {
                 StatusLabel.Text = $"Error: {response.ErrorMessage}";
                 StatusLabel.TextColor = Colors.Red;
-                await DisplayAlert("Error", response.ErrorMessage ?? "Failed to submit data", "OK");
+                await DisplayAlertAsync("Error", response.ErrorMessage ?? "Failed to submit data", "OK");
             }
         }
         catch (Exception ex)
         {
             StatusLabel.Text = $"Error: {ex.Message}";
             StatusLabel.TextColor = Colors.Red;
-            await DisplayAlert("Error", $"An error occurred: {ex.Message}", "OK");
+            await DisplayAlertAsync("Error", $"An error occurred: {ex.Message}", "OK");
         }
         finally
         {

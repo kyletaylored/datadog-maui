@@ -2,6 +2,9 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using DatadogMauiApp.Models;
+#if ANDROID
+using Datadog.Android.Trace;
+#endif
 
 namespace DatadogMauiApp.Services;
 
@@ -56,6 +59,7 @@ public class ApiService
 
             Console.WriteLine($"[ApiService] Submitting data to {_baseUrl}/data");
             Console.WriteLine($"[ApiService] Payload: {json}");
+            Console.WriteLine($"[ApiService] Correlation ID: {correlationId} (for distributed tracing)");
 
             var response = await _httpClient.PostAsync($"{_baseUrl}/data", content);
 
@@ -158,6 +162,36 @@ public class ApiService
         {
             Console.WriteLine($"[ApiService] Health check failed: {ex.Message}");
             return false;
+        }
+    }
+
+    public async Task<HealthResponse?> GetHealthAsync()
+    {
+        try
+        {
+            Console.WriteLine($"[ApiService] Fetching health from {_baseUrl}/health");
+
+            var response = await _httpClient.GetAsync($"{_baseUrl}/health");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var health = await response.Content.ReadFromJsonAsync<HealthResponse>(
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                );
+
+                Console.WriteLine($"[ApiService] Health received: Status={health?.Status}");
+                return health;
+            }
+            else
+            {
+                Console.WriteLine($"[ApiService] Health fetch failed: {response.StatusCode}");
+                return null;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[ApiService] Error fetching health: {ex.Message}");
+            return null;
         }
     }
 }

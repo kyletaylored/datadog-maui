@@ -8,7 +8,10 @@ public partial class App : Application
 
         // Log app start
         Console.WriteLine("[Telemetry] App Start");
+    }
 
-        MainPage = new AppShell();
+    protected override Window CreateWindow(IActivationState? activationState)
+    {
+        return new Window(new AppShell());
     }
 }

@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="DatadogMauiApp.Pages.ApiTestPage"
+             Title="API Test">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+
+            <!-- Header -->
+            <Label Text="API Testing Dashboard"
+                   FontSize="24"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center" />
+
+            <Label Text="Test API endpoints with native MAUI controls"
+                   FontSize="14"
+                   TextColor="Gray"
+                   HorizontalOptions="Center" />
+
+            <!-- Health Check Section -->
+            <Frame BorderColor="LightGray" Padding="15" CornerRadius="8">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Health Check"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+
+                    <Button x:Name="HealthCheckButton"
+                            Text="Check API Health"
+                            Clicked="OnHealthCheckClicked"
+                            BackgroundColor="#4CAF50" />
+
+                    <Label x:Name="HealthStatusLabel"
+                           Text="Status: Not checked"
+                           FontSize="14" />
+
+                    <Label x:Name="HealthDetailsLabel"
+                           Text=""
+                           FontSize="12"
+                           TextColor="Gray"
+                           IsVisible="False" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Get Config Section -->
+            <Frame BorderColor="LightGray" Padding="15" CornerRadius="8">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Configuration"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+
+                    <Button x:Name="GetConfigButton"
+                            Text="Get Configuration"
+                            Clicked="OnGetConfigClicked"
+                            BackgroundColor="#2196F3" />
+
+                    <Label x:Name="ConfigStatusLabel"
+                           Text="Status: Not loaded"
+                           FontSize="14" />
+
+                    <Label x:Name="ConfigDetailsLabel"
+                           Text=""
+                           FontSize="12"
+                           TextColor="Gray"
+                           IsVisible="False" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Submit Data Section -->
+            <Frame BorderColor="LightGray" Padding="15" CornerRadius="8">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Submit Test Data"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+
+                    <Entry x:Name="ApiTestSessionEntry"
+                           Placeholder="Session Name"
+                           Text="API Test Session" />
+
+                    <Editor x:Name="ApiTestNotesEditor"
+                            Placeholder="Notes"
+                            Text="Testing API from native MAUI app"
+                            HeightRequest="80" />
+
+                    <Entry x:Name="ApiTestValueEntry"
+                           Placeholder="Numeric Value"
+                           Keyboard="Numeric"
+                           Text="42" />
+
+                    <Button x:Name="SubmitTestDataButton"
+                            Text="Submit Test Data"
+                            Clicked="OnSubmitTestDataClicked"
+                            BackgroundColor="#FF9800" />
+
+                    <Label x:Name="SubmitStatusLabel"
+                           Text=""
+                           FontSize="14" />
+
+                    <Label x:Name="SubmitDetailsLabel"
+                           Text=""
+                           FontSize="12"
+                           TextColor="Gray"
+                           IsVisible="False" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Response Details Section -->
+            <Frame BorderColor="LightGray" Padding="15" CornerRadius="8">
+                <VerticalStackLayout Spacing="10">
+                    <Label Text="Last Response"
+                           FontSize="18"
+                           FontAttributes="Bold" />
+
+                    <ScrollView HeightRequest="200">
+                        <Label x:Name="ResponseDetailsLabel"
+                               Text="No responses yet"
+                               FontSize="12"
+                               FontFamily="Courier"
+                               TextColor="Gray" />
+                    </ScrollView>
+                </VerticalStackLayout>
+            </Frame>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

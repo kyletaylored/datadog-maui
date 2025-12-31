@@ -19,6 +19,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<Services.ApiService>();
         builder.Services.AddTransient<Pages.DashboardPage>();
         builder.Services.AddTransient<Pages.WebPortalPage>();
+        builder.Services.AddTransient<Pages.ApiTestPage>();
 
 #if DEBUG
         builder.Logging.AddDebug();

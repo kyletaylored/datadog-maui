@@ -5,8 +5,6 @@ using Datadog.Android.Log;
 using Datadog.Android.Ndk;
 using Datadog.Android.Privacy;
 using Datadog.Android.Rum;
-using Datadog.Android.SessionReplay;
-using Datadog.Android.SessionReplay.Material;
 using DatadogMauiApp.Config;
 
 namespace DatadogMauiApp;
@@ -22,43 +20,33 @@ public class MainApplication : MauiApplication
     public override void OnCreate()
     {
         base.OnCreate();
-        // TODO: Update Datadog initialization for v2.21.0-pre.1 API
-        // The current initialization code was written for an older API version
-        // Refer to: https://github.com/brunck/datadog-dotnet-mobile-sdk-bindings for examples
         InitializeDatadog();
     }
 
     private void InitializeDatadog()
     {
-        // TODO: This initialization code was written for an older Datadog API version
-        // and is incompatible with v2.21.0-pre.1. The API has changed significantly.
-        //
-        // To update this code:
-        // 1. Visit: https://github.com/brunck/datadog-dotnet-mobile-sdk-bindings
-        // 2. Check the samples directory for Android initialization examples
-        // 3. Update the code below to match the v2.21.0-pre.1 API
-        //
-        // Key API changes:
-        // - SessionReplayConfiguration.Builder constructor signature changed
-        // - SessionReplayPrivacy constructor changed
-        // - SessionReplay.Enable method signature changed
-        // - ExtensionSupport class location/namespace changed
-
-        Console.WriteLine("[Datadog] Initialization disabled - needs API update for v2.21.0-pre.1");
-
-        /*
         try
         {
+            Console.WriteLine($"[Datadog] Initializing for Android");
+            Console.WriteLine($"[Datadog] - Environment: {DatadogConfig.Environment}");
+            Console.WriteLine($"[Datadog] - Client Token: {DatadogConfig.ClientToken.Substring(0, 10)}...{DatadogConfig.ClientToken.Substring(DatadogConfig.ClientToken.Length - 4)}");
+            Console.WriteLine($"[Datadog] - RUM Application ID: {DatadogConfig.RumApplicationId}");
+
             // Create Datadog configuration
+            // Parameters: clientToken, env, variant, serviceName
             var config = new DDConfiguration.Builder(
                 DatadogConfig.ClientToken,
                 DatadogConfig.Environment,
-                string.Empty,
+                string.Empty,  // variant - use empty string if no build variants
                 DatadogConfig.ServiceName
-            ).Build();
+            )
+            //.UseSite(DatadogSite.Us1)  // Uncomment if needed
+            .Build();
 
             // Initialize Datadog SDK
             Datadog.Android.Datadog.Initialize(this, config, TrackingConsent.Granted);
+
+            Console.WriteLine("[Datadog] Core SDK initialized");
 
             // Set verbosity level for debugging
             if (DatadogConfig.VerboseLogging)
@@ -67,17 +55,18 @@ public class MainApplication : MauiApplication
             }
 
             // Enable Logs
-            var logsConfig = new LogsConfiguration.Builder()
-                .SetEventMapper(null)
-                .Build();
+            var logsConfig = new LogsConfiguration.Builder().Build();
             Logs.Enable(logsConfig);
+
+            Console.WriteLine("[Datadog] Logs enabled");
 
             // Enable NDK crash reports
             NdkCrashReports.Enable();
 
+            Console.WriteLine("[Datadog] NDK crash reports enabled");
+
             // Enable RUM (Real User Monitoring)
             var rumConfiguration = new RumConfiguration.Builder(DatadogConfig.RumApplicationId)
-                .SetSessionSampleRate(DatadogConfig.SessionSampleRate)
                 .TrackLongTasks()
                 .TrackFrustrations(true)
                 .TrackBackgroundEvents(true)
@@ -86,32 +75,66 @@ public class MainApplication : MauiApplication
 
             Datadog.Android.Rum.Rum.Enable(rumConfiguration);
 
-            // Enable Session Replay
-            var replayConfig = new SessionReplayConfiguration.Builder(
-                new[] { DatadogConfig.SessionReplaySampleRate })
-                .SetPrivacy(new SessionReplayPrivacy(
-                    TextAndInputPrivacy.MaskAll,
-                    ImagePrivacy.MaskAll,
-                    TouchPrivacy.Hide))
-                .Build();
-
-            SessionReplay.Enable(replayConfig, this);
-
-            // Add Material extension for better UI capture
-            ExtensionSupport.AddExtensionSupport(new MaterialExtensionSupport());
+            Console.WriteLine("[Datadog] RUM enabled");
 
             // Initialize Global RUM Monitor
             _ = Datadog.Android.Rum.GlobalRumMonitor.Instance;
+            _ = Datadog.Android.Rum.GlobalRumMonitor.Get();
 
             Console.WriteLine("[Datadog] Successfully initialized for Android");
+
+            // TODO: Add Session Replay, APM Tracing, and WebView tracking
+            // These features require additional using statements and configuration
+            // See comments below for implementation details
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[Datadog] Failed to initialize: {ex.Message}");
             Console.WriteLine($"[Datadog] Stack trace: {ex.StackTrace}");
         }
-        */
     }
+
+    /* TODO: Advanced Datadog Features
+     *
+     * To enable these features, add the following using statements:
+     * using Datadog.Android.SessionReplay;
+     * using Datadog.Android.Trace;
+     * using Datadog.Android.WebView;
+     *
+     * SESSION REPLAY:
+     * ---------------
+     * var sessionReplayConfig = new SessionReplayConfiguration.Builder(
+     *     new[] { DatadogConfig.SessionReplaySampleRate }
+     * )
+     *     .SetPrivacy(new SessionReplayPrivacy(
+     *         TextAndInputPrivacy.MaskAll,
+     *         ImagePrivacy.MaskAll,
+     *         TouchPrivacy.Hide
+     *     ))
+     *     .Build();
+     * SessionReplay.Enable(sessionReplayConfig);
+     * SessionReplay.Instance?.StartRecording();
+     *
+     * APM TRACING:
+     * ------------
+     * var traceConfig = new TraceConfiguration.Builder().Build();
+     * Datadog.Android.Trace.Trace.Enable(traceConfig);
+     *
+     * var tracer = DatadogTracing.NewTracerBuilder(Datadog.Android.Datadog.Instance)
+     *     .WithServiceName(DatadogConfig.ServiceName)
+     *     .SetBundleWithRumEnabled(true)
+     *     .Build();
+     * GlobalDatadogTracer.RegisterIfAbsent(tracer);
+     *
+     * WEBVIEW TRACKING:
+     * -----------------
+     * To enable tracking for a specific WebView:
+     *
+     * webView.Settings.JavaScriptEnabled = true;
+     * WebViewTracking.Enable(webView, new[] { "example.com", "api.example.com" });
+     *
+     * Call this method in your WebView page after creating the WebView instance.
+     */
 
     protected override MauiApp CreateMauiApp() => MauiProgram.CreateMauiApp();
 }

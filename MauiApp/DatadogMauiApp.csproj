@@ -59,6 +59,7 @@
         <PackageReference Include="Bcr.Datadog.Android.Sdk.SessionReplay.Material" Version="2.21.0-pre.1" />
         <PackageReference Include="Bcr.Datadog.Android.Sdk.Trace" Version="2.21.0-pre.1" />
         <PackageReference Include="Bcr.Datadog.Android.Sdk.Ndk" Version="2.21.0-pre.1" />
+        <PackageReference Include="Bcr.Datadog.Android.Sdk.WebView" Version="2.21.0-pre.1" />
     </ItemGroup>
 
     <!-- iOS-specific Datadog bindings from NuGet -->

@@ -2,24 +2,60 @@ namespace DatadogMauiApp.Config;
 
 public static class DatadogConfig
 {
-    // TODO: Replace these with your actual Datadog credentials
-    // Get these from: https://app.datadoghq.com/organization-settings/client-tokens
-    public const string ClientToken = "YOUR_CLIENT_TOKEN_HERE";
+    // Platform-specific credentials
+    // Android credentials
+    private const string AndroidClientToken = "REDACTED_CLIENT_TOKEN_1";
+    private const string AndroidRumApplicationId = "REDACTED_APP_ID_3";
 
-    // TODO: Replace with your RUM Application ID
-    // Get this from: https://app.datadoghq.com/rum/list
-    public const string RumApplicationId = "YOUR_RUM_APPLICATION_ID_HERE";
+    // iOS credentials
+    private const string IosClientToken = "REDACTED_CLIENT_TOKEN_2";
+    private const string IosRumApplicationId = "REDACTED_APP_ID_2";
 
-    // Environment (e.g., "dev", "staging", "prod")
-    public const string Environment = "dev";
+    // Get platform-specific client token
+    public static string ClientToken
+    {
+        get
+        {
+#if ANDROID
+            return AndroidClientToken;
+#elif IOS
+            return IosClientToken;
+#else
+            return string.Empty;
+#endif
+        }
+    }
+
+    // Get platform-specific RUM Application ID
+    public static string RumApplicationId
+    {
+        get
+        {
+#if ANDROID
+            return AndroidRumApplicationId;
+#elif IOS
+            return IosRumApplicationId;
+#else
+            return string.Empty;
+#endif
+        }
+    }
+
+    // Environment (can be overridden via environment variable)
+    public static string Environment
+    {
+        get
+        {
+            var env = System.Environment.GetEnvironmentVariable("DD_ENV");
+            return !string.IsNullOrEmpty(env) ? env : "local";
+        }
+    }
 
     // Service name
     public const string ServiceName = "datadog-maui-app";
 
     // Datadog site (US1, EU1, US3, US5, US1_FED, AP1)
-    // For US: DatadogSite.Us1
-    // For EU: DatadogSite.Eu1
-    public const string Site = "us1"; // Change to your site
+    public const string Site = "us1";
 
     // Session sample rate (0-100)
     // 100 = track all sessions

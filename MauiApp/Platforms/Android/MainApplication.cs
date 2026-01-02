@@ -7,7 +7,7 @@ using Datadog.Android.Privacy;
 using Datadog.Android.Rum;
 using Datadog.Android.SessionReplay;
 using Datadog.Android.Trace;
-using DatadogMauiApp.Config;
+using DatadogConfig = DatadogMauiApp.Config.DatadogConfig;
 
 namespace DatadogMauiApp;
 

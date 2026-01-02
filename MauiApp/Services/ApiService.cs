@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using DatadogMauiApp.Models;
+using Microsoft.Extensions.Logging;
 #if ANDROID
 using Datadog.Android.Trace;
 #endif
@@ -12,20 +13,33 @@ public class ApiService
 {
     private readonly HttpClient _httpClient;
     private readonly string _baseUrl;
+    private readonly ILogger<ApiService> _logger;
 
-    public ApiService()
+    public ApiService(ILogger<ApiService> logger, ILogger<DatadogHttpHandler> datadogLogger)
     {
+        _logger = logger;
+
+        // Create HttpClient with Datadog tracking handler
+#if ANDROID
+        var datadogHandler = new DatadogHttpHandler(datadogLogger);
+        _httpClient = new HttpClient(datadogHandler)
+        {
+            Timeout = TimeSpan.FromSeconds(30)
+        };
+        _logger.LogInformation("HttpClient created with Datadog tracking handler");
+#else
         _httpClient = new HttpClient
         {
             Timeout = TimeSpan.FromSeconds(30)
         };
+#endif
 
         // Platform-specific base URL
         // Android emulator: 10.0.2.2 maps to host machine's localhost
         // iOS simulator: localhost works directly
         _baseUrl = GetPlatformBaseUrl();
 
-        Console.WriteLine($"[ApiService] Base URL: {_baseUrl}");
+        _logger.LogInformation("ApiService initialized with base URL: {BaseUrl}", _baseUrl);
     }
 
     private string GetPlatformBaseUrl()
@@ -57,16 +71,16 @@ public class ApiService
             var json = JsonSerializer.Serialize(submission);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-            Console.WriteLine($"[ApiService] Submitting data to {_baseUrl}/data");
-            Console.WriteLine($"[ApiService] Payload: {json}");
-            Console.WriteLine($"[ApiService] Correlation ID: {correlationId} (for distributed tracing)");
+            _logger.LogInformation("Submitting data to {Url}", $"{_baseUrl}/data");
+            _logger.LogDebug("Payload: {Payload}", json);
+            _logger.LogInformation("Correlation ID: {CorrelationId} (for distributed tracing)", correlationId);
 
             var response = await _httpClient.PostAsync($"{_baseUrl}/data", content);
 
             if (response.IsSuccessStatusCode)
             {
                 var responseContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"[ApiService] Response: {responseContent}");
+                _logger.LogInformation("Response received: {ResponseContent}", responseContent);
 
                 var apiResponse = JsonSerializer.Deserialize<ApiResponse>(
                     responseContent,
@@ -82,7 +96,7 @@ public class ApiService
             else
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"[ApiService] Error Response: {errorContent}");
+                _logger.LogError("Error Response: {StatusCode} - {ErrorContent}", response.StatusCode, errorContent);
 
                 return new ApiResponse
                 {
@@ -93,7 +107,7 @@ public class ApiService
         }
         catch (HttpRequestException ex)
         {
-            Console.WriteLine($"[ApiService] HTTP Error: {ex.Message}");
+            _logger.LogError(ex, "HTTP Error: {ErrorMessage}", ex.Message);
             return new ApiResponse
             {
                 IsSuccessful = false,
@@ -102,7 +116,7 @@ public class ApiService
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ApiService] Error: {ex.Message}");
+            _logger.LogError(ex, "Unexpected error: {ErrorMessage}", ex.Message);
             return new ApiResponse
             {
                 IsSuccessful = false,
@@ -115,7 +129,7 @@ public class ApiService
     {
         try
         {
-            Console.WriteLine($"[ApiService] Fetching config from {_baseUrl}/config");
+            _logger.LogInformation("Fetching config from {Url}", $"{_baseUrl}/config");
 
             var request = new HttpRequestMessage(HttpMethod.Get, $"{_baseUrl}/config");
 
@@ -133,18 +147,18 @@ public class ApiService
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                 );
 
-                Console.WriteLine($"[ApiService] Config received: WebViewUrl={config?.WebViewUrl}");
+                _logger.LogInformation("Config received: WebViewUrl={WebViewUrl}", config?.WebViewUrl);
                 return config;
             }
             else
             {
-                Console.WriteLine($"[ApiService] Config fetch failed: {response.StatusCode}");
+                _logger.LogWarning("Config fetch failed: {StatusCode}", response.StatusCode);
                 return null;
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ApiService] Error fetching config: {ex.Message}");
+            _logger.LogError(ex, "Error fetching config");
             return null;
         }
     }
@@ -153,14 +167,14 @@ public class ApiService
     {
         try
         {
-            Console.WriteLine($"[ApiService] Health check: {_baseUrl}/health");
+            _logger.LogInformation("Health check: {Url}", $"{_baseUrl}/health");
 
             var response = await _httpClient.GetAsync($"{_baseUrl}/health");
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ApiService] Health check failed: {ex.Message}");
+            _logger.LogError(ex, "Health check failed");
             return false;
         }
     }
@@ -169,7 +183,7 @@ public class ApiService
     {
         try
         {
-            Console.WriteLine($"[ApiService] Fetching health from {_baseUrl}/health");
+            _logger.LogInformation("Fetching health from {Url}", $"{_baseUrl}/health");
 
             var response = await _httpClient.GetAsync($"{_baseUrl}/health");
 
@@ -179,18 +193,18 @@ public class ApiService
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                 );
 
-                Console.WriteLine($"[ApiService] Health received: Status={health?.Status}");
+                _logger.LogInformation("Health received: Status={Status}", health?.Status);
                 return health;
             }
             else
             {
-                Console.WriteLine($"[ApiService] Health fetch failed: {response.StatusCode}");
+                _logger.LogWarning("Health fetch failed: {StatusCode}", response.StatusCode);
                 return null;
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[ApiService] Error fetching health: {ex.Message}");
+            _logger.LogError(ex, "Error fetching health");
             return null;
         }
     }

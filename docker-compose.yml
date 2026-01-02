@@ -10,17 +10,22 @@ services:
       - DD_HOSTNAME=datadog-agent
       - DD_APM_ENABLED=true
       - DD_APM_NON_LOCAL_TRAFFIC=true
-      - DD_LOGS_ENABLED=true
-      - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
       - DD_CONTAINER_EXCLUDE="name:datadog-agent"
       - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+      - DD_TRACE_DEBUG=true
+      - DD_LOGS_ENABLED=true
+      - DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true
+      - DD_LOGS_CONFIG_USE_PODMAN_LOGS=true
     ports:
       - "8126:8126"  # APM trace intake
       - "8125:8125/udp"  # DogStatsD
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - $HOME/.local/share/containers:/var/lib/containers:ro
+      - /run/user/502/podman/podman.sock:/var/run/podman.sock:ro
       - /proc/:/host/proc/:ro
       - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+      - datadog-data:/var/log/datadog
+      - datadog-data:/var/run/s6
     restart: unless-stopped
 
   api:
@@ -38,19 +43,36 @@ services:
         - DD_RUM_WEB_APPLICATION_ID=${DD_RUM_WEB_APPLICATION_ID}
     ports:
       - "5000:8080"
+    labels:
+      com.datadoghq.tags.env: "${DD_ENV:-local}"
+      com.datadoghq.tags.service: "datadog-maui-api"
+      com.datadoghq.tags.version: "1.0.0"
     environment:
+      # Application settings
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
+      - DD_RUM_WEB_CLIENT_TOKEN=${DD_RUM_WEB_CLIENT_TOKEN}
+      - DD_RUM_WEB_APPLICATION_ID=${DD_RUM_WEB_APPLICATION_ID}
+      # Datadog Agent connection
       - DD_AGENT_HOST=datadog-agent
       - DD_TRACE_AGENT_PORT=8126
+      - DD_SITE=${DD_SITE:-datadoghq.com}
+      # Datadog service tagging
       - DD_ENV=${DD_ENV:-local}
       - DD_SERVICE=datadog-maui-api
       - DD_VERSION=1.0.0
+      # Datadog tracing configuration
+      - DD_TRACE_ENABLED=true
+      - DD_RUNTIME_METRICS_ENABLED=true
+      - DD_LOGS_INJECTION=true
       - DD_TRACE_DEBUG=true
       - DD_TRACE_LOG_DIRECTORY=/tmp
-      - DD_RUM_WEB_CLIENT_TOKEN=${DD_RUM_WEB_CLIENT_TOKEN}
-      - DD_RUM_WEB_APPLICATION_ID=${DD_RUM_WEB_APPLICATION_ID}
-      - DD_SITE=${DD_SITE:-datadoghq.com}
+      # Distributed tracing configuration
+      - DD_TRACE_PROPAGATION_STYLE=datadog,tracecontext
+      - DD_TRACE_PROPAGATION_EXTRACT_FIRST=true
+      # Additional tracing features
+      - DD_TRACE_CLIENT_IP_ENABLED=true
+      - DD_PROFILING_ENABLED=false
     volumes:
       - api-data:/app/data
     depends_on:
@@ -60,3 +82,5 @@ services:
 volumes:
   api-data:
     name: datadog-maui-api-data
+  datadog-data:
+    name: datadog-agent-data

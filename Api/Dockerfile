@@ -63,20 +63,9 @@ ENV CORECLR_PROFILER_PATH=/opt/datadog/Datadog.Trace.ClrProfiler.Native.so
 ENV DD_DOTNET_TRACER_HOME=/opt/datadog
 ENV DD_INTEGRATIONS=/opt/datadog/integrations.json
 
-# Datadog configuration
-ENV DD_SERVICE=datadog-maui-api
-ENV DD_ENV=local
-ENV DD_VERSION=1.0.0
-ENV DD_TRACE_ENABLED=true
-ENV DD_RUNTIME_METRICS_ENABLED=true
-ENV DD_LOGS_INJECTION=true
+# Datadog configuration - most values should come from docker-compose runtime
+# Only set essential defaults here that are unlikely to change
 ENV DD_TRACE_SAMPLE_RATE=1.0
-ENV DD_PROFILING_ENABLED=1
-ENV DD_TRACE_DEBUG=0
-
-# Datadog Agent connection (will be overridden by docker-compose)
-ENV DD_AGENT_HOST=datadog-agent
-ENV DD_TRACE_AGENT_PORT=8126
 
 # Datadog Git metadata (for CI/CD integration)
 ENV DD_GIT_REPOSITORY_URL=${DD_GIT_REPOSITORY_URL}

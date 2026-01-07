@@ -158,9 +158,6 @@ app-build-android:
 
 app-build-ios:
 	@echo "🔨 Building iOS app..."
-	@echo "⚠️  Note: iOS build requires Xcode simulator runtime that matches SDK 23C53"
-	@echo "⚠️  Current Xcode 26.2 has a version mismatch with available simulator runtimes"
-	@echo "⚠️  This is a known Xcode/iOS SDK versioning issue, not a code issue"
 	@bash -c 'source ./set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && dotnet build -f net10.0-ios'
 	@echo "✅ iOS build complete"
 

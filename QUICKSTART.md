@@ -54,6 +54,8 @@ curl http://localhost:5000/health
 
 ### For iOS (macOS only):
 
+⚠️ **Important**: If you're using Xcode 26.0, see [iOS Build Configuration](docs/ios/BUILD_CONFIGURATION.md) for critical setup details.
+
 1. Open Xcode simulator
 2. Navigate to the MauiApp directory:
    ```bash
@@ -61,7 +63,7 @@ curl http://localhost:5000/health
    ```
 3. Build and run:
    ```bash
-   dotnet build -t:Run -f net9.0-ios
+   dotnet build -t:Run -f net10.0-ios
    ```
 
 **Note**: The app automatically uses `http://localhost:5000` to connect to your local API.
@@ -129,14 +131,22 @@ docker rm datadog-api
 dotnet workload install maui
 ```
 
+### iOS build failing with Xcode 26.0?
+See the detailed [iOS Build Configuration](docs/ios/BUILD_CONFIGURATION.md) guide for troubleshooting native linker errors.
+
 ## What's Next?
 
 Check out [README.md](README.md) for:
 - Detailed architecture explanation
 - API endpoint documentation
 - Advanced configuration
-- Deployment guides
 - Production considerations
+
+### Additional Documentation
+- [Documentation Index](docs/README.md) - All guides and references
+- [iOS Build Configuration](docs/ios/BUILD_CONFIGURATION.md) - Critical Xcode 26.0 setup
+- [iOS Crash Reporting](docs/ios/CRASH_REPORTING.md) - dSYM setup for crash logs
+- [Azure Deployment](docs/deployment/AZURE_QUICK_START.md) - Cloud deployment options
 
 ## Need Help?
 

@@ -1,0 +1,23 @@
+<Project>
+  <!--
+    iOS Build Configuration Note:
+    =============================
+    ✅ iOS builds are now WORKING!
+
+    Environment:
+    - Xcode: 26.0
+    - .NET SDK: 10.0.101
+    - MAUI workload: 10.0.1 (includes both iOS SDK 26.0 and 26.2)
+
+    Solution:
+    The MAUI workload includes both iOS SDK 26.0 and 26.2, but defaults to using 26.2.
+    By setting TargetPlatformVersion=26.0 in the csproj, we force the build to use
+    iOS SDK 26.0 which is compatible with Xcode 26.0.
+
+    See DatadogMauiApp.csproj for the iOS build configuration.
+    See iOS_BUILD_NOTES.md for detailed documentation.
+
+    ✅ Android builds work perfectly with all Datadog integrations.
+    ✅ iOS builds now work for iOS Simulator on Apple Silicon.
+  -->
+</Project>

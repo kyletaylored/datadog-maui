@@ -1,0 +1,93 @@
+# check=skip=UndefinedVar
+# Azure Functions Dockerfile with Datadog APM
+# This Dockerfile creates an Azure Functions compatible image with Datadog monitoring
+
+# Build stage
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+
+# Copy csproj and restore dependencies
+COPY DatadogMauiApi.csproj .
+RUN dotnet restore
+
+# Copy everything else and build
+COPY . .
+RUN dotnet publish -c Release -o /app/publish
+
+# Runtime stage - use Azure Functions base image
+FROM mcr.microsoft.com/azure-functions/dotnet-isolated:4-dotnet-isolated9.0 AS runtime
+
+ARG TARGETARCH
+ARG DD_GIT_REPOSITORY_URL
+ARG DD_GIT_COMMIT_SHA
+ARG DD_GIT_TAG
+ARG BUILD_DATE
+# Note: RUM client tokens are PUBLIC credentials meant for browser exposure
+# They are not secret and are safe to include in client-side code
+ARG DD_RUM_WEB_CLIENT_TOKEN
+ARG DD_RUM_WEB_APPLICATION_ID
+
+WORKDIR /home/site/wwwroot
+
+# Install dependencies and Datadog .NET APM tracer
+# Azure Functions runs on Debian-based images
+RUN apt-get update \
+    && apt-get install -y unzip procps wget curl \
+    && mkdir -p /opt/datadog \
+    && mkdir -p /var/log/datadog \
+    && TRACER_VERSION=3.34.0 \
+    && curl -LO https://github.com/DataDog/dd-trace-dotnet/releases/download/v${TRACER_VERSION}/datadog-dotnet-apm_${TRACER_VERSION}_${TARGETARCH}.deb \
+    && dpkg -i ./datadog-dotnet-apm_${TRACER_VERSION}_${TARGETARCH}.deb \
+    && /opt/datadog/createLogPath.sh \
+    && rm ./datadog-dotnet-apm_${TRACER_VERSION}_${TARGETARCH}.deb \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Copy published app
+COPY --from=build /app/publish .
+
+# Inject RUM credentials into index.html at build time
+RUN if [ -f wwwroot/index.html ] && [ -n "$DD_RUM_WEB_CLIENT_TOKEN" ] && [ -n "$DD_RUM_WEB_APPLICATION_ID" ]; then \
+    sed -i "s/PLACEHOLDER_CLIENT_TOKEN/${DD_RUM_WEB_CLIENT_TOKEN}/" wwwroot/index.html && \
+    sed -i "s/PLACEHOLDER_APPLICATION_ID/${DD_RUM_WEB_APPLICATION_ID}/" wwwroot/index.html && \
+    echo "✅ RUM credentials injected into index.html"; \
+    else \
+    echo "⚠️  Skipping RUM injection (file not found or credentials not provided)"; \
+    fi
+
+# Azure Functions specific environment variables
+# These are set by the Functions runtime, but we define defaults
+ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
+    AzureFunctionsJobHost__Logging__Console__IsEnabled=true
+
+# Enable the Datadog tracer (automatic instrumentation)
+ENV CORECLR_ENABLE_PROFILING=1 \
+    CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8} \
+    CORECLR_PROFILER_PATH=/opt/datadog/Datadog.Trace.ClrProfiler.Native.so \
+    DD_DOTNET_TRACER_HOME=/opt/datadog \
+    DD_INTEGRATIONS=/opt/datadog/integrations.json
+
+# Datadog configuration - most values should come from Azure App Settings
+# Only set essential defaults here that are unlikely to change
+ENV DD_TRACE_SAMPLE_RATE=1.0
+
+# Datadog Git metadata (for CI/CD integration)
+ENV DD_GIT_REPOSITORY_URL=${DD_GIT_REPOSITORY_URL} \
+    DD_GIT_COMMIT_SHA=${DD_GIT_COMMIT_SHA} \
+    DD_GIT_TAG=${DD_GIT_TAG}
+
+# Add Docker labels for Datadog and OCI standards
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+    org.opencontainers.image.source="${DD_GIT_REPOSITORY_URL}" \
+    org.opencontainers.image.revision="${DD_GIT_COMMIT_SHA}" \
+    org.opencontainers.image.version="${DD_GIT_TAG}" \
+    org.opencontainers.image.title="Datadog MAUI API - Azure Functions" \
+    org.opencontainers.image.description=".NET API with Datadog APM tracing for MAUI mobile app (Azure Functions compatible)" \
+    com.datadoghq.tags.service="datadog-maui-api" \
+    com.datadoghq.tags.env="production" \
+    com.datadoghq.tags.version="${DD_GIT_TAG}" \
+    git.repository_url="${DD_GIT_REPOSITORY_URL}" \
+    git.commit.sha="${DD_GIT_COMMIT_SHA}" \
+    git.tag="${DD_GIT_TAG}"
+
+# Azure Functions uses this as the default command
+# The Functions host will automatically discover and run your functions

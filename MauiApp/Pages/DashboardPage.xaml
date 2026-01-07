@@ -67,6 +67,40 @@
                 HorizontalOptions="Center"
                 TextColor="Green" />
 
+            <!-- Test Crash Button (for testing dSYM crash reporting) -->
+            <Frame
+                Padding="20"
+                CornerRadius="10"
+                HasShadow="True"
+                BackgroundColor="#FFF3CD"
+                BorderColor="#856404">
+
+                <VerticalStackLayout Spacing="10">
+                    <Label
+                        Text="⚠️ Crash Testing"
+                        FontSize="18"
+                        FontAttributes="Bold"
+                        TextColor="#856404"
+                        HorizontalOptions="Center" />
+
+                    <Label
+                        Text="Use this to test crash reporting and dSYM symbolication"
+                        FontSize="12"
+                        TextColor="#856404"
+                        HorizontalOptions="Center"
+                        HorizontalTextAlignment="Center" />
+
+                    <Button
+                        x:Name="TestCrashButton"
+                        Text="Test Crash (iOS dSYM)"
+                        Clicked="OnTestCrashClicked"
+                        HorizontalOptions="Fill"
+                        BackgroundColor="#DC3545"
+                        TextColor="White"
+                        Margin="0,10,0,0" />
+                </VerticalStackLayout>
+            </Frame>
+
         </VerticalStackLayout>
     </ScrollView>
 

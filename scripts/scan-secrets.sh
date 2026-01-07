@@ -85,6 +85,12 @@ git log --all --full-history -p | grep -oE "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-
 done
 echo ""
 
+echo -e "${RED}🔑 Datadog API Keys:${NC}"
+git log --all --full-history -p | grep -oE "DD_API_KEY=[a-f0-9]{32}" | sed 's/DD_API_KEY=//' | sort -u | while read key; do
+    echo "  - $key"
+done
+echo ""
+
 # Find which commits contain these secrets
 echo -e "${YELLOW}📝 Sample commits containing secrets:${NC}"
 FIRST_TOKEN=$(git log --all --full-history -p | grep -oE "pub[a-f0-9]{32}" | head -1)

@@ -71,6 +71,7 @@ Scans Git history for sensitive data (API keys, tokens, application IDs).
 - Datadog client tokens (`pub[a-f0-9]{32}`)
 - Datadog application IDs (`app[a-f0-9]{32}`)
 - UUIDs (RUM Application IDs)
+- Datadog API keys (`DD_API_KEY=[a-f0-9]{32}`)
 - Generic API keys, secrets, passwords
 
 **Output:** Lists all found secrets and affected commits

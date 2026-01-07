@@ -40,6 +40,7 @@ fi
 # Find tokens dynamically
 TOKENS_FILE=$(mktemp)
 APP_IDS_FILE=$(mktemp)
+API_KEYS_FILE=$(mktemp)
 
 # Find client tokens (pub + 32 hex chars)
 git log --all --full-history -p | grep -oE "pub[a-f0-9]{32}" | sort -u > "$TOKENS_FILE"
@@ -50,10 +51,14 @@ git log --all --full-history -p | grep -oE "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-
     grep -v "12345678-1234-1234-1234-123456789012" | \
     sort -u > "$APP_IDS_FILE"
 
+# Find Datadog API keys (32 hex chars, not starting with pub/app)
+git log --all --full-history -p | grep -oE "DD_API_KEY=[a-f0-9]{32}" | sed 's/DD_API_KEY=//' | sort -u > "$API_KEYS_FILE"
+
 # Confirm with user
 TOKEN_COUNT=$(wc -l < "$TOKENS_FILE" | tr -d ' ')
 APP_ID_COUNT=$(wc -l < "$APP_IDS_FILE" | tr -d ' ')
-TOTAL_COUNT=$((TOKEN_COUNT + APP_ID_COUNT))
+API_KEY_COUNT=$(wc -l < "$API_KEYS_FILE" | tr -d ' ')
+TOTAL_COUNT=$((TOKEN_COUNT + APP_ID_COUNT + API_KEY_COUNT))
 
 echo -e "${YELLOW}Found secrets to remove:${NC}"
 echo ""
@@ -68,6 +73,13 @@ echo -e "${YELLOW}Application IDs: $APP_ID_COUNT${NC}"
 if [ "$APP_ID_COUNT" -gt 0 ]; then
     cat "$APP_IDS_FILE" | while read appid; do
         echo "  - $appid"
+    done
+fi
+echo ""
+echo -e "${YELLOW}API Keys: $API_KEY_COUNT${NC}"
+if [ "$API_KEY_COUNT" -gt 0 ]; then
+    cat "$API_KEYS_FILE" | while read apikey; do
+        echo "  - $apikey"
     done
 fi
 echo ""
@@ -145,11 +157,24 @@ EXPRESSIONS_FILE=$(mktemp)
             app_counter=$((app_counter + 1))
         fi
     done
+
+    # Replace API keys
+    key_counter=1
+    cat "$API_KEYS_FILE" | while read apikey; do
+        if [ ! -z "$apikey" ]; then
+            echo "${apikey}==>REDACTED_API_KEY_${key_counter}"
+            # Uppercase variant
+            upper_key=$(echo "$apikey" | tr '[:lower:]' '[:upper:]')
+            echo "${upper_key}==>REDACTED_API_KEY_${key_counter}"
+            key_counter=$((key_counter + 1))
+        fi
+    done
 } > "$EXPRESSIONS_FILE"
 
 # Cleanup temp files
 rm -f "$TOKENS_FILE"
 rm -f "$APP_IDS_FILE"
+rm -f "$API_KEYS_FILE"
 
 echo -e "${YELLOW}🔧 Scrubbing secrets from Git history...${NC}"
 echo ""

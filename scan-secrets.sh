@@ -77,15 +77,20 @@ done
 echo ""
 
 echo -e "${RED}🆔 Application IDs (UUID format):${NC}"
-git log --all --full-history -p | grep -oE "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" | grep -v "00000000" | sort -u | head -10 | while read token; do
+git log --all --full-history -p | grep -oE "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" | \
+    grep -v "00000000-0000-0000-0000-000000000000" | \
+    grep -v "12345678-1234-1234-1234-123456789012" | \
+    sort -u | while read token; do
     echo "  - $token"
 done
 echo ""
 
 # Find which commits contain these secrets
-echo -e "${YELLOW}📝 Commits containing secrets:${NC}"
-git log --all --full-history --oneline -p -S "REDACTED_CLIENT_TOKEN_1" | grep "^[a-f0-9]" | head -5
-git log --all --full-history --oneline -p -S "REDACTED_CLIENT_TOKEN_2" | grep "^[a-f0-9]" | head -5
+echo -e "${YELLOW}📝 Sample commits containing secrets:${NC}"
+FIRST_TOKEN=$(git log --all --full-history -p | grep -oE "pub[a-f0-9]{32}" | head -1)
+if [ ! -z "$FIRST_TOKEN" ]; then
+    git log --all --full-history --oneline -p -S "$FIRST_TOKEN" | grep "^[a-f0-9]" | head -5
+fi
 echo ""
 
 # Cleanup

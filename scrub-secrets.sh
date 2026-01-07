@@ -37,11 +37,39 @@ if ! git diff-index --quiet HEAD --; then
     exit 1
 fi
 
+# Find tokens dynamically
+TOKENS_FILE=$(mktemp)
+APP_IDS_FILE=$(mktemp)
+
+# Find client tokens (pub + 32 hex chars)
+git log --all --full-history -p | grep -oE "pub[a-f0-9]{32}" | sort -u > "$TOKENS_FILE"
+
+# Find application IDs (UUID format, excluding common test UUIDs)
+git log --all --full-history -p | grep -oE "[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}" | \
+    grep -v "00000000-0000-0000-0000-000000000000" | \
+    grep -v "12345678-1234-1234-1234-123456789012" | \
+    sort -u > "$APP_IDS_FILE"
+
 # Confirm with user
+TOKEN_COUNT=$(wc -l < "$TOKENS_FILE" | tr -d ' ')
+APP_ID_COUNT=$(wc -l < "$APP_IDS_FILE" | tr -d ' ')
+TOTAL_COUNT=$((TOKEN_COUNT + APP_ID_COUNT))
+
 echo -e "${YELLOW}Found secrets to remove:${NC}"
 echo ""
-echo "  - REDACTED_CLIENT_TOKEN_1 (Android Client Token)"
-echo "  - REDACTED_CLIENT_TOKEN_2 (iOS Client Token)"
+echo -e "${YELLOW}Client Tokens: $TOKEN_COUNT${NC}"
+if [ "$TOKEN_COUNT" -gt 0 ]; then
+    cat "$TOKENS_FILE" | while read token; do
+        echo "  - $token"
+    done
+fi
+echo ""
+echo -e "${YELLOW}Application IDs: $APP_ID_COUNT${NC}"
+if [ "$APP_ID_COUNT" -gt 0 ]; then
+    cat "$APP_IDS_FILE" | while read appid; do
+        echo "  - $appid"
+    done
+fi
 echo ""
 echo -e "${YELLOW}Before proceeding:${NC}"
 echo "  1. ✅ Create a backup: git clone . ../datadog-maui-backup"
@@ -61,20 +89,24 @@ if ! command -v git-filter-repo &> /dev/null; then
     echo -e "${YELLOW}📦 Installing git-filter-repo...${NC}"
     echo ""
 
-    # Try to install via pip
-    if command -v pip3 &> /dev/null; then
-        pip3 install git-filter-repo
-    elif command -v pip &> /dev/null; then
-        pip install git-filter-repo
-    elif command -v brew &> /dev/null; then
+    # Try Homebrew first (easiest on macOS)
+    if command -v brew &> /dev/null; then
         brew install git-filter-repo
+    # Try uv (modern Python package manager)
+    elif command -v uv &> /dev/null; then
+        uv tool install git-filter-repo
+    # Try pipx (isolated Python tool installation)
+    elif command -v pipx &> /dev/null; then
+        pipx install git-filter-repo
     else
         echo -e "${RED}❌ Cannot install git-filter-repo automatically.${NC}"
         echo ""
         echo "Please install it manually:"
-        echo "  pip install git-filter-repo"
-        echo "  OR"
         echo "  brew install git-filter-repo"
+        echo "  OR"
+        echo "  uv tool install git-filter-repo"
+        echo "  OR"
+        echo "  pipx install git-filter-repo"
         echo ""
         exit 1
     fi
@@ -86,16 +118,38 @@ echo ""
 # Create expressions file for replacement
 EXPRESSIONS_FILE=$(mktemp)
 
-# Add all secrets to replace (case-insensitive)
-cat > "$EXPRESSIONS_FILE" << 'EOF'
-# Datadog Client Tokens
-REDACTED_CLIENT_TOKEN_1==>REDACTED_ANDROID_CLIENT_TOKEN
-REDACTED_CLIENT_TOKEN_2==>REDACTED_IOS_CLIENT_TOKEN
+# Build replacement expressions dynamically from found tokens and app IDs
+{
+    echo "***REMOVED***"
 
-# Case variations (if any)
-REDACTED_CLIENT_TOKEN_1==>REDACTED_ANDROID_CLIENT_TOKEN
-REDACTED_CLIENT_TOKEN_2==>REDACTED_IOS_CLIENT_TOKEN
-EOF
+    # Replace client tokens
+    counter=1
+    cat "$TOKENS_FILE" | while read token; do
+        if [ ! -z "$token" ]; then
+            echo "${token}==>REDACTED_CLIENT_TOKEN_${counter}"
+            # Uppercase variant (portable way)
+            upper_token=$(echo "$token" | tr '[:lower:]' '[:upper:]')
+            echo "${upper_token}==>REDACTED_CLIENT_TOKEN_${counter}"
+            counter=$((counter + 1))
+        fi
+    done
+
+    # Replace application IDs
+    app_counter=1
+    cat "$APP_IDS_FILE" | while read appid; do
+        if [ ! -z "$appid" ]; then
+            echo "${appid}==>REDACTED_APP_ID_${app_counter}"
+            # Uppercase variant
+            upper_appid=$(echo "$appid" | tr '[:lower:]' '[:upper:]')
+            echo "${upper_appid}==>REDACTED_APP_ID_${app_counter}"
+            app_counter=$((app_counter + 1))
+        fi
+    done
+} > "$EXPRESSIONS_FILE"
+
+# Cleanup temp files
+rm -f "$TOKENS_FILE"
+rm -f "$APP_IDS_FILE"
 
 echo -e "${YELLOW}🔧 Scrubbing secrets from Git history...${NC}"
 echo ""

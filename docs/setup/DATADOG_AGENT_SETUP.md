@@ -27,7 +27,7 @@ Datadog Platform (datadoghq.com)
 ### .env File
 Located at project root, contains:
 ```
-DD_API_KEY=REDACTED_API_KEY_1
+DD_API_KEY=your_datadog_api_key_here
 DD_SITE=datadoghq.com
 DD_ENV=local
 ```

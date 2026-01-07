@@ -8,11 +8,11 @@ Your Datadog MAUI project now has:
 - **Docker images** automatically tagged with Git commit SHA or tag
 - **Environment variables** embed Git metadata at runtime
 - **Docker labels** follow OCI and Datadog standards
-- **Helper script** ([set-git-metadata.sh](set-git-metadata.sh)) extracts Git info automatically
+- **Helper script** ([scripts/set-git-metadata.sh](scripts/set-git-metadata.sh)) extracts Git info automatically
 
 **Usage:**
 ```bash
-source ./set-git-metadata.sh && make api-build
+source ./scripts/set-git-metadata.sh && make api-build
 ```
 
 ### 2. Enhanced Makefile
@@ -100,7 +100,7 @@ Documentation is now organized in a clear structure:
 source .env
 
 # 2. Build with Git metadata
-source ./set-git-metadata.sh && make api-build
+source ./scripts/set-git-metadata.sh && make api-build
 
 # 3. Start all services
 make api-start
@@ -189,7 +189,7 @@ make api-logs | grep "Data Submission"
 - **[Api/Dockerfile](Api/Dockerfile)** - API container with Datadog tracer and Git metadata
 - **[.env](.env)** - Datadog credentials (API key, site, environment)
 - **[Makefile](Makefile)** - Build automation with Git metadata support
-- **[set-git-metadata.sh](set-git-metadata.sh)** - Git metadata extraction helper
+- **[scripts/set-git-metadata.sh](scripts/set-git-metadata.sh)** - Git metadata extraction helper
 
 ### Application Code
 
@@ -210,7 +210,7 @@ make api-logs | grep "Data Submission"
 
 ```bash
 make api-clean
-source ./set-git-metadata.sh && make api-build
+source ./scripts/set-git-metadata.sh && make api-build
 make api-start
 ```
 
@@ -221,7 +221,7 @@ make api-start
 git add . && git commit -m "New feature"
 
 # Rebuild with new metadata
-source ./set-git-metadata.sh
+source ./scripts/set-git-metadata.sh
 make api-build
 make api-restart
 ```
@@ -297,7 +297,7 @@ See [docs/guides/GIT_METADATA_INTEGRATION.md](docs/guides/GIT_METADATA_INTEGRATI
 **Solution:**
 ```bash
 # Source the script (don't just run it)
-source ./set-git-metadata.sh
+source ./scripts/set-git-metadata.sh
 
 # Verify variables are set
 echo $DD_GIT_COMMIT_SHA

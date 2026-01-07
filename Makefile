@@ -62,7 +62,7 @@ help:
 api-build: docker-build
 docker-build:
 	@echo "🔨 Building Docker images..."
-	@bash ./set-git-metadata.sh > /dev/null 2>&1 || true
+	@bash ./scripts/set-git-metadata.sh > /dev/null 2>&1 || true
 	COMPOSE_BAKE=true docker-compose build
 	@echo "✅ Images built successfully"
 
@@ -153,23 +153,23 @@ app-restore:
 
 app-build-android:
 	@echo "🔨 Building Android app..."
-	@bash -c 'source ./set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && /usr/local/share/dotnet/dotnet build -f net10.0-android'
+	@bash -c 'source ./scripts/set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && /usr/local/share/dotnet/dotnet build -f net10.0-android'
 	@echo "✅ Android build complete"
 
 app-build-ios:
 	@echo "🔨 Building iOS app..."
-	@bash -c 'source ./set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && dotnet build -f net10.0-ios'
+	@bash -c 'source ./scripts/set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && dotnet build -f net10.0-ios'
 	@echo "✅ iOS build complete"
 
 app-run-android:
 	@echo "🚀 Building and running Android app..."
 	@echo "   Make sure Android emulator is running!"
-	@bash -c 'source ./set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && /usr/local/share/dotnet/dotnet build -t:Run -f net10.0-android'
+	@bash -c 'source ./scripts/set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && /usr/local/share/dotnet/dotnet build -t:Run -f net10.0-android'
 
 app-run-ios:
 	@echo "🚀 Building and running iOS app..."
 	@echo "   Make sure iOS simulator is running!"
-	@bash -c 'source ./set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && dotnet build -t:Run -f net10.0-ios'
+	@bash -c 'source ./scripts/set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && dotnet build -t:Run -f net10.0-ios'
 
 # View Android logs
 app-logs-android:

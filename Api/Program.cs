@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using Datadog.Trace;
 using DatadogMauiApi.Models;
 using DatadogMauiApi.Services;
 
@@ -163,24 +164,78 @@ app.MapPut("/profile", (UserProfile updatedProfile, SessionManager sessionManage
 .WithName("UpdateProfile");
 
 // Health check endpoint
-app.MapGet("/health", (ILogger<Program> logger) =>
+app.MapGet("/health", (SessionManager sessionManager, ILogger<Program> logger, HttpContext context) =>
 {
-    logger.LogInformation("[Health Check] Service is healthy at {Time}", DateTime.UtcNow);
+    using var scope = Tracer.Instance.StartActive("health.check");
+    scope.Span.ResourceName = "GET /health";
+    scope.Span.SetTag("service.name", "datadog-maui-api");
+    scope.Span.SetTag("operation.type", "health_check");
+
+    // Check if user is authenticated
+    var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
+    if (!string.IsNullOrEmpty(token))
+    {
+        var (isValid, userId) = sessionManager.ValidateSession(token);
+        if (isValid && userId != null)
+        {
+            scope.Span.SetTag("user.id", userId);
+            scope.Span.SetTag("authenticated", "true");
+            logger.LogInformation("[Health Check] Service is healthy at {Time} - User: {UserId}", DateTime.UtcNow, userId);
+        }
+        else
+        {
+            scope.Span.SetTag("authenticated", "false");
+            logger.LogInformation("[Health Check] Service is healthy at {Time} - Anonymous", DateTime.UtcNow);
+        }
+    }
+    else
+    {
+        scope.Span.SetTag("authenticated", "false");
+        logger.LogInformation("[Health Check] Service is healthy at {Time} - Anonymous", DateTime.UtcNow);
+    }
+
     return Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
 })
 .WithName("HealthCheck");
 
 // Config endpoint - returns dynamic configuration
-app.MapGet("/config", (ILogger<Program> logger, HttpContext context) =>
+app.MapGet("/config", (SessionManager sessionManager, ILogger<Program> logger, HttpContext context) =>
 {
+    using var scope = Tracer.Instance.StartActive("config.get");
+    scope.Span.ResourceName = "GET /config";
+    scope.Span.SetTag("service.name", "datadog-maui-api");
+    scope.Span.SetTag("operation.type", "config_fetch");
+
     // Extract correlation ID from headers if present
     if (context.Request.Headers.TryGetValue("X-Correlation-ID", out var correlationId))
     {
+        scope.Span.SetTag("correlation.id", correlationId.ToString());
         logger.LogInformation("[Config] Configuration requested with CorrelationId: {CorrelationId}", correlationId);
     }
     else
     {
         logger.LogInformation("[Config] Configuration requested");
+    }
+
+    // Check if user is authenticated
+    var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
+    if (!string.IsNullOrEmpty(token))
+    {
+        var (isValid, userId) = sessionManager.ValidateSession(token);
+        if (isValid && userId != null)
+        {
+            scope.Span.SetTag("user.id", userId);
+            scope.Span.SetTag("authenticated", "true");
+            logger.LogInformation("[Config] Configuration requested by user: {UserId}", userId);
+        }
+        else
+        {
+            scope.Span.SetTag("authenticated", "false");
+        }
+    }
+    else
+    {
+        scope.Span.SetTag("authenticated", "false");
     }
 
     // Return the web portal URL served from this container
@@ -195,26 +250,73 @@ app.MapGet("/config", (ILogger<Program> logger, HttpContext context) =>
         }
     );
 
+    scope.Span.SetTag("config.webview_url", config.WebViewUrl);
+    scope.Span.SetTag("config.feature_flags_count", config.FeatureFlags.Count);
+
     return Results.Ok(config);
 })
 .WithName("GetConfig");
 
 // Data submission endpoint
-app.MapPost("/data", (DataSubmission submission, ILogger<Program> logger) =>
+app.MapPost("/data", (DataSubmission submission, SessionManager sessionManager, ILogger<Program> logger, HttpContext context) =>
 {
+    using var scope = Tracer.Instance.StartActive("data.submit");
+    scope.Span.ResourceName = "POST /data";
+    scope.Span.SetTag("service.name", "datadog-maui-api");
+    scope.Span.SetTag("operation.type", "data_submission");
+    scope.Span.SetTag("correlation.id", submission.CorrelationId);
+    scope.Span.SetTag("data.session_name", submission.SessionName);
+    scope.Span.SetTag("data.numeric_value", submission.NumericValue);
 
-    logger.LogInformation(
-        "[Data Submission] CorrelationId: {CorrelationId}, SessionName: {SessionName}, Notes: {Notes}, NumericValue: {NumericValue}",
-        submission.CorrelationId,
-        submission.SessionName,
-        submission.Notes,
-        submission.NumericValue
-    );
+    // Check if user is authenticated
+    var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
+    if (!string.IsNullOrEmpty(token))
+    {
+        var (isValid, userId) = sessionManager.ValidateSession(token);
+        if (isValid && userId != null)
+        {
+            scope.Span.SetTag("user.id", userId);
+            scope.Span.SetTag("authenticated", "true");
+            logger.LogInformation(
+                "[Data Submission] User: {UserId}, CorrelationId: {CorrelationId}, SessionName: {SessionName}, Notes: {Notes}, NumericValue: {NumericValue}",
+                userId,
+                submission.CorrelationId,
+                submission.SessionName,
+                submission.Notes,
+                submission.NumericValue
+            );
+        }
+        else
+        {
+            scope.Span.SetTag("authenticated", "false");
+            logger.LogInformation(
+                "[Data Submission] CorrelationId: {CorrelationId}, SessionName: {SessionName}, Notes: {Notes}, NumericValue: {NumericValue}",
+                submission.CorrelationId,
+                submission.SessionName,
+                submission.Notes,
+                submission.NumericValue
+            );
+        }
+    }
+    else
+    {
+        scope.Span.SetTag("authenticated", "false");
+        logger.LogInformation(
+            "[Data Submission] CorrelationId: {CorrelationId}, SessionName: {SessionName}, Notes: {Notes}, NumericValue: {NumericValue}",
+            submission.CorrelationId,
+            submission.SessionName,
+            submission.Notes,
+            submission.NumericValue
+        );
+    }
 
     // Store the submission
     dataStore.Add(submission);
 
     logger.LogInformation("[Data Store] Total submissions: {Count}", dataStore.Count);
+
+    scope.Span.SetTag("data.total_submissions", dataStore.Count);
+    scope.Span.SetTag("submission.success", "true");
 
     return Results.Ok(new
     {
@@ -227,9 +329,37 @@ app.MapPost("/data", (DataSubmission submission, ILogger<Program> logger) =>
 .WithName("SubmitData");
 
 // Bonus: Get all submitted data (for debugging)
-app.MapGet("/data", (ILogger<Program> logger) =>
+app.MapGet("/data", (SessionManager sessionManager, ILogger<Program> logger, HttpContext context) =>
 {
-    logger.LogInformation("[Data Retrieval] Fetching all submissions. Count: {Count}", dataStore.Count);
+    using var scope = Tracer.Instance.StartActive("data.get_all");
+    scope.Span.ResourceName = "GET /data";
+    scope.Span.SetTag("service.name", "datadog-maui-api");
+    scope.Span.SetTag("operation.type", "data_retrieval");
+    scope.Span.SetTag("data.count", dataStore.Count);
+
+    // Check if user is authenticated
+    var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
+    if (!string.IsNullOrEmpty(token))
+    {
+        var (isValid, userId) = sessionManager.ValidateSession(token);
+        if (isValid && userId != null)
+        {
+            scope.Span.SetTag("user.id", userId);
+            scope.Span.SetTag("authenticated", "true");
+            logger.LogInformation("[Data Retrieval] Fetching all submissions for user: {UserId}. Count: {Count}", userId, dataStore.Count);
+        }
+        else
+        {
+            scope.Span.SetTag("authenticated", "false");
+            logger.LogInformation("[Data Retrieval] Fetching all submissions. Count: {Count}", dataStore.Count);
+        }
+    }
+    else
+    {
+        scope.Span.SetTag("authenticated", "false");
+        logger.LogInformation("[Data Retrieval] Fetching all submissions. Count: {Count}", dataStore.Count);
+    }
+
     return Results.Ok(dataStore.ToList());
 })
 .WithName("GetAllData");

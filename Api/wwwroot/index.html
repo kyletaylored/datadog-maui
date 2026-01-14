@@ -22,6 +22,11 @@
             sessionReplaySampleRate: 100,
             trackBfcacheViews: true,
             defaultPrivacyLevel: 'mask-user-input',
+            allowedTracingUrls: [
+                "localhost",
+                "127.0.0.1",
+                (url) => url.length > 0,
+            ],
             });
         })
     </script>

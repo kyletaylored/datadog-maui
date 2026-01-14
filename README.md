@@ -28,11 +28,24 @@ Run `make help` to see all available commands.
 
 ```
 datadog-maui/
-├── Api/                        # ASP.NET Core Web API
+├── Api/                        # ASP.NET Core 9.0 Web API (Minimal APIs)
 │   ├── Models/                 # Data models
 │   ├── Program.cs             # API endpoints and configuration
 │   ├── Dockerfile             # Container definition
 │   └── DatadogMauiApi.csproj  # API project file
+│
+├── ApiFramework/              # ASP.NET .NET Framework 4.8 API (Web API Controllers)
+│   ├── Controllers/            # API controllers
+│   ├── Models/                # Data models
+│   ├── Services/              # Business logic
+│   ├── App_Start/             # Configuration
+│   ├── Web.config             # IIS configuration + Datadog
+│   └── DatadogMauiApi.Framework.csproj
+│
+├── scripts/                   # PowerShell deployment scripts
+│   ├── install-iis.ps1        # IIS installation
+│   ├── deploy-iis-core.ps1    # Deploy .NET Core to IIS
+│   └── deploy-iis-framework.ps1  # Deploy .NET Framework to IIS
 │
 └── MauiApp/                   # .NET MAUI Mobile App
     ├── Models/                # Shared data models
@@ -46,6 +59,8 @@ datadog-maui/
     │   └── iOS/
     └── DatadogMauiApp.csproj  # MAUI project file
 ```
+
+**Two API Implementations**: This project includes both .NET Core 9.0 and .NET Framework 4.8 versions of the same API, providing identical functionality with full Datadog APM support. See [.NET Comparison Guide](docs/DOTNET_COMPARISON.md) for details.
 
 ## Features
 
@@ -377,6 +392,10 @@ All telemetry events are logged to the console. In production, integrate with a 
 - [Upload dSYMs Script](docs/ios/scripts/upload-dsyms.sh) - Automation script for dSYM uploads
 
 ### Deployment
+- [IIS Deployment Guide](docs/IIS_DEPLOYMENT.md) - Deploy to Windows IIS (Core + Framework)
+- [IIS Deployment Scripts](scripts/README.md) - PowerShell automation for IIS
+- [.NET Framework Quick Start](FRAMEWORK_QUICKSTART.md) - Quick reference for .NET Framework 4.8
+- [.NET Comparison Guide](docs/DOTNET_COMPARISON.md) - Core vs Framework side-by-side
 - [Azure Quick Start](docs/deployment/AZURE_QUICK_START.md) - Quick decision guide for Azure deployment
 - [Azure Functions Migration](docs/deployment/AZURE_FUNCTIONS_MIGRATION.md) - Migrate API to Azure Functions
 - [Dockerfile Comparison](docs/deployment/DOCKERFILE_COMPARISON.md) - Standard vs Azure Functions containers

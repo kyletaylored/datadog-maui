@@ -1,178 +1,95 @@
-# Scripts Directory
+# Deployment Scripts
 
-This directory contains utility scripts for the Datadog MAUI project.
+PowerShell scripts for deploying the Datadog MAUI demo APIs to IIS on Windows.
 
-## Available Scripts
+## Prerequisites
 
-### Development Scripts
+- Windows Server 2016+ or Windows 10/11
+- PowerShell 5.1 or higher
+- Administrator privileges
 
-#### [manage-api.sh](manage-api.sh)
-Legacy API management script (replaced by Makefile).
+## Quick Start
 
-**Note**: Use `make` commands instead for better functionality:
-- `make api-build` - Build API
-- `make api-start` - Start API
-- `make api-stop` - Stop API
-- `make api-logs` - View logs
-- `make api-test` - Test endpoints
+### 1. Install IIS
 
-#### [set-git-metadata.sh](set-git-metadata.sh)
-Extracts Git metadata and exports environment variables for Docker builds.
-
-**Usage:**
-```bash
-source ./scripts/set-git-metadata.sh
-make api-build
+```powershell
+# Run as Administrator
+.\scripts\install-iis.ps1
 ```
 
-**Exported Variables:**
-- `DD_GIT_REPOSITORY_URL` - Git remote URL
-- `DD_GIT_COMMIT_SHA` - Current commit SHA
-- `DD_GIT_BRANCH` - Current branch name
-- `DD_GIT_TAG` - Current tag (if on a tag)
-- `DD_GIT_COMMIT_MESSAGE` - Last commit message
-- `DD_GIT_COMMIT_AUTHOR_NAME` - Commit author
-- `DD_GIT_COMMIT_AUTHOR_EMAIL` - Author email
-- `DD_GIT_COMMIT_COMMITTER_NAME` - Committer name
-- `DD_GIT_COMMIT_COMMITTER_EMAIL` - Committer email
-- `DD_GIT_COMMIT_AUTHOR_DATE` - Author timestamp (ISO 8601)
-- `DD_GIT_COMMIT_COMMITTER_DATE` - Committer timestamp (ISO 8601)
+### 2. Install Runtime Dependencies
 
-**Called by:** Makefile's `api-build` target
+**For .NET Core 9.0 API:**
+- Download and install [.NET 9.0 Hosting Bundle](https://dotnet.microsoft.com/download/dotnet/9.0)
 
-#### [set-mobile-env.sh](set-mobile-env.sh)
-Sources `.env` file and exports Datadog configuration for mobile app builds.
+**For .NET Framework 4.8 API:**
+- .NET Framework 4.8 is built into Windows 10/11 and Windows Server 2019+
 
-**Usage:**
-```bash
-source ./scripts/set-mobile-env.sh
-cd MauiApp && dotnet build -f net10.0-android
+**For Datadog Automatic Instrumentation:**
+- Download and install [Datadog .NET Tracer](https://github.com/DataDog/dd-trace-dotnet/releases/latest)
+
+### 3. Restart IIS
+
+```powershell
+iisreset
 ```
 
-**Exports:**
-- `DD_RUM_ANDROID_CLIENT_TOKEN`
-- `DD_RUM_ANDROID_APPLICATION_ID`
-- `DD_RUM_IOS_CLIENT_TOKEN`
-- `DD_RUM_IOS_APPLICATION_ID`
+### 4. Deploy Applications
 
-**Called by:** Makefile's `app-build-*` and `app-run-*` targets
-
-### Security Scripts
-
-#### [scan-secrets.sh](scan-secrets.sh)
-Scans Git history for sensitive data (API keys, tokens, application IDs).
-
-**Usage:**
-```bash
-./scripts/scan-secrets.sh
+**Deploy .NET Core 9.0 API (Port 5000):**
+```powershell
+.\scripts\deploy-iis-core.ps1 -DdApiKey "your-datadog-api-key"
 ```
 
-**Searches for:**
-- Datadog client tokens (`pub[a-f0-9]{32}`)
-- Datadog application IDs (`app[a-f0-9]{32}`)
-- UUIDs (RUM Application IDs)
-- Datadog API keys (`DD_API_KEY=[a-f0-9]{32}`)
-- Generic API keys, secrets, passwords
-
-**Output:** Lists all found secrets and affected commits
-
-#### [scrub-secrets.sh](scrub-secrets.sh)
-Removes sensitive data from Git history using `git-filter-repo`.
-
-**⚠️ WARNING:** This rewrites Git history and cannot be undone without a backup!
-
-**Usage:**
-```bash
-# 1. Create backup first
-git clone . ../datadog-maui-backup
-
-# 2. Rotate credentials in Datadog
-
-# 3. Run scrubber
-./scripts/scrub-secrets.sh
-
-# 4. Verify
-./scripts/scan-secrets.sh
+**Deploy .NET Framework 4.8 API (Port 5001):**
+```powershell
+.\scripts\deploy-iis-framework.ps1 -DdApiKey "your-datadog-api-key"
 ```
 
-**Requirements:**
-- `git-filter-repo` (installed via brew, uv, or pipx)
+## Script Reference
 
-**What it does:**
-1. Finds all secrets dynamically from Git history
-2. Creates replacement expressions
-3. Rewrites history to replace secrets with `REDACTED_*`
-4. Cleans up Git references
+### install-iis.ps1
 
-**After running:**
-- Force push: `git push --force --all origin`
-- All collaborators must re-clone
-- Consider deleting and recreating the repository
+Installs IIS with all required Windows features.
 
-## Mobile App Scripts
+### deploy-iis-core.ps1
 
-Located in [../MauiApp/](../MauiApp/):
+Deploys the .NET Core 9.0 API to IIS.
 
-#### [test-crash-reporting.sh](../MauiApp/test-crash-reporting.sh)
-Automated iOS crash reporting and dSYM upload workflow.
+**Parameters:**
+- `-SiteName` - IIS website name (default: `DatadogMauiApi`)
+- `-AppPoolName` - Application pool name (default: `DatadogMauiApiPool`)
+- `-Port` - HTTP port (default: `5000`)
+- `-PhysicalPath` - Deployment directory
+- `-DdApiKey` - Datadog API key
+- `-DdEnv` - Datadog environment tag (default: `production`)
 
-See [MauiApp/CRASH_TESTING_GUIDE.md](../MauiApp/CRASH_TESTING_GUIDE.md) for details.
+### deploy-iis-framework.ps1
 
-## iOS-Specific Scripts
+Deploys the .NET Framework 4.8 API to IIS.
 
-Located in [../docs/ios/scripts/](../docs/ios/scripts/):
+**Parameters:**
+- `-SiteName` - IIS website name (default: `DatadogMauiApiFramework`)
+- `-AppPoolName` - Application pool name (default: `DatadogMauiApiFrameworkPool`)
+- `-Port` - HTTP port (default: `5001`)
+- `-PhysicalPath` - Deployment directory
+- `-DdApiKey` - Datadog API key
+- `-DdEnv` - Datadog environment tag (default: `production`)
 
-#### [upload-dsyms.sh](../docs/ios/scripts/upload-dsyms.sh)
-Manual dSYM upload to Datadog for iOS crash symbolication.
+## Testing Deployments
 
-See [docs/ios/CRASH_REPORTING.md](../docs/ios/CRASH_REPORTING.md) for details.
+### Health Check
 
-## Usage Patterns
+```powershell
+# Test .NET Core API
+Invoke-RestMethod http://localhost:5000/health
 
-### Standard Workflow
-
-```bash
-# 1. Set Git metadata and build API
-source ./scripts/set-git-metadata.sh
-make api-build
-make api-start
-
-# 2. Build and run mobile app
-source ./scripts/set-mobile-env.sh
-make app-run-android
-```
-
-### Security Cleanup Before Publishing
-
-```bash
-# 1. Scan for secrets
-./scripts/scan-secrets.sh
-
-# 2. Create backup
-git clone . ../datadog-maui-backup
-
-# 3. Rotate credentials in Datadog
-
-# 4. Scrub secrets
-./scripts/scrub-secrets.sh
-
-# 5. Verify
-./scripts/scan-secrets.sh
-
-# 6. Force push or create new repo
-git push --force --all origin
-```
-
-## Script Permissions
-
-All scripts should be executable:
-```bash
-chmod +x scripts/*.sh
+# Test .NET Framework API
+Invoke-RestMethod http://localhost:5001/health
 ```
 
 ## See Also
 
-- [Makefile](../Makefile) - Primary build automation
-- [README.md](../README.md) - Project overview
-- [QUICKSTART.md](../QUICKSTART.md) - Quick start guide
-- [docs/](../docs/) - Detailed documentation
+- [IIS Deployment Guide](../docs/IIS_DEPLOYMENT.md)
+- [.NET Comparison Guide](../docs/DOTNET_COMPARISON.md)
+- [Framework Quick Start](../FRAMEWORK_QUICKSTART.md)

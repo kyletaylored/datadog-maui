@@ -123,12 +123,7 @@ public class MainApplication : MauiApplication
         }
     }
 
-    /* TODO: Additional Datadog Features (APM Tracing, WebView Tracking)
-     *
-     * APM TRACING:
-     * ------------
-     * API needs verification. Package installed: Bcr.Datadog.Android.Sdk.Trace
-     * See DATADOG_ADVANCED_FEATURES.md for investigation notes
+    /* TODO: Additional Datadog Features (WebView Tracking)
      *
      * WEBVIEW TRACKING:
      * -----------------

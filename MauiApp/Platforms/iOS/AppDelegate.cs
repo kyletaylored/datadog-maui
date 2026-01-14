@@ -48,14 +48,25 @@ public class AppDelegate : MauiUIApplicationDelegate
 
             Console.WriteLine("[Datadog] Logs enabled");
 
-            // Enable RUM (Real User Monitoring)
+            // Enable RUM (Real User Monitoring) with URL session tracking for APM
             var rumConfig = new DDRUMConfiguration(DatadogConfig.RumApplicationId);
             rumConfig.SessionSampleRate = DatadogConfig.SessionSampleRate;
             rumConfig.TrackFrustrations = true;
             rumConfig.TrackBackgroundEvents = true;
+
+            // Note: iOS URLSession tracking configuration is different from Android
+            // The C# bindings (Bcr.Datadog.iOS v2.26.0) don't expose URLSessionInstrumentation APIs
+            // For distributed tracing on iOS, the native SDK requires:
+            // 1. URLSessionInstrumentation.enable() - not available in C# bindings yet
+            // 2. First-party hosts configured in Trace.Configuration.URLSessionTracking
+            //
+            // Basic RUM tracking (page views, user interactions, errors) works fine.
+            // Network tracing and trace correlation with backend may require native iOS code or binding updates.
+
             DDRUM.Enable(rumConfig);
 
             Console.WriteLine("[Datadog] RUM enabled");
+            Console.WriteLine("[Datadog] Note: URLSession tracking requires native iOS APIs not yet available in C# bindings");
 
             // Enable APM Tracing
             try

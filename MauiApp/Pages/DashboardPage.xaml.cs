@@ -109,15 +109,8 @@ public partial class DashboardPage : ContentPage
         // Log to Datadog before crashing (if available)
         try
         {
-#if IOS
-            // iOS-specific logging before crash
-            // Note: DDLogger API needs investigation - using Console for now
-            Console.WriteLine("[Datadog] Test crash initiated by user for dSYM testing");
-#elif ANDROID
-            // Android-specific crash logging
-            var logger = Datadog.Android.Log.Logger.Builder.Instance?.Build();
-            logger?.E("Test crash initiated by user for NDK testing");
-#endif
+            // Log before crash (works for both iOS and Android)
+            Console.WriteLine("[Datadog] Test crash initiated by user");
         }
         catch
         {

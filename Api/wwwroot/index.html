@@ -52,7 +52,15 @@
             margin-bottom: 30px;
         }
 
-        h1 {
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-left h1 {
             color: #667eea;
             margin-bottom: 10px;
         }
@@ -60,6 +68,53 @@
         .subtitle {
             color: #666;
             font-size: 1.1rem;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            text-align: right;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .user-id {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 200px;
+        }
+
+        .login-form input {
+            padding: 8px;
+            border: 2px solid #e5e7eb;
+            border-radius: 5px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button.secondary {
+            background: #6b7280;
+        }
+
+        button.secondary:hover {
+            background: #4b5563;
         }
 
         .grid {
@@ -243,9 +298,41 @@
 <body>
     <div class="container">
         <header>
-            <h1>🐕 Datadog MAUI - Web Portal</h1>
-            <p class="subtitle">Interactive API Dashboard with Real-time Monitoring</p>
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>🐕 Datadog MAUI - Web Portal</h1>
+                    <p class="subtitle">Interactive API Dashboard with Real-time Monitoring</p>
+                </div>
+                <div class="user-section">
+                    <div id="auth-section">
+                        <!-- Login form shown by default -->
+                        <div id="login-form-container" class="login-form">
+                            <input type="text" id="login-username" placeholder="Username" value="demo">
+                            <input type="password" id="login-password" placeholder="Password" value="password">
+                            <button onclick="login()">Login</button>
+                            <p style="font-size: 0.85rem; color: #999; margin-top: 5px;">
+                                Try: demo/password, admin/password, or test/password
+                            </p>
+                        </div>
+                        <!-- User info shown after login -->
+                        <div id="user-info-container" class="user-info" style="display: none;">
+                            <div class="user-name" id="user-name"></div>
+                            <div class="user-id" id="user-id"></div>
+                            <div class="button-group" style="margin-top: 10px;">
+                                <button onclick="viewProfile()">View Profile</button>
+                                <button class="secondary" onclick="logout()">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </header>
+
+        <!-- Profile Card (shown when logged in) -->
+        <div class="card" id="profile-card" style="display: none; margin-bottom: 30px;">
+            <h2>👤 User Profile</h2>
+            <div id="profile-content"></div>
+        </div>
 
         <div class="grid">
             <!-- Health Check Card -->
@@ -308,10 +395,263 @@
 
     <script>
         const API_BASE = window.location.origin;
+        let authToken = localStorage.getItem('authToken');
+        let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+        // Initialize auth state on page load
+        function initAuth() {
+            if (authToken && currentUser) {
+                showUserInfo(currentUser);
+                setDatadogUser(currentUser);
+            }
+        }
 
         // Generate correlation ID for requests
         function generateCorrelationId() {
             return 'web-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Login
+        async function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            if (!username || !password) {
+                alert('Please enter username and password');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Store auth info
+                    authToken = data.token;
+                    currentUser = {
+                        userId: data.userId,
+                        username: data.username
+                    };
+                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                    // Update UI
+                    showUserInfo(currentUser);
+
+                    // Set Datadog RUM user context
+                    setDatadogUser(currentUser);
+
+                    // Log success action in RUM
+                    if (window.DD_RUM) {
+                        window.DD_RUM.addAction('user_login', {
+                            username: currentUser.username,
+                            userId: currentUser.userId
+                        });
+                    }
+
+                    console.log('✅ Login successful:', currentUser);
+                } else {
+                    alert(data.message || 'Login failed');
+                }
+            } catch (error) {
+                alert('Login error: ' + error.message);
+                console.error('Login error:', error);
+            }
+        }
+
+        // Logout
+        async function logout() {
+            try {
+                if (authToken) {
+                    await fetch(`${API_BASE}/auth/logout`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    });
+                }
+
+                // Clear local storage
+                authToken = null;
+                currentUser = null;
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('currentUser');
+
+                // Clear Datadog RUM user
+                if (window.DD_RUM) {
+                    window.DD_RUM.clearUser();
+                    window.DD_RUM.addAction('user_logout');
+                }
+
+                // Update UI
+                showLoginForm();
+                hideProfile();
+
+                console.log('✅ Logout successful');
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        // Set Datadog RUM user context
+        function setDatadogUser(user) {
+            if (window.DD_RUM && user) {
+                window.DD_RUM.setUser({
+                    id: user.userId,
+                    name: user.username,
+                    email: user.username + '@example.com'
+                });
+                console.log('✅ Datadog RUM user set:', user);
+            }
+        }
+
+        // Show user info
+        function showUserInfo(user) {
+            document.getElementById('login-form-container').style.display = 'none';
+            document.getElementById('user-info-container').style.display = 'block';
+            document.getElementById('user-name').textContent = '👋 ' + user.username;
+            document.getElementById('user-id').textContent = 'User ID: ' + user.userId;
+        }
+
+        // Show login form
+        function showLoginForm() {
+            document.getElementById('login-form-container').style.display = 'flex';
+            document.getElementById('user-info-container').style.display = 'none';
+            document.getElementById('login-username').value = 'demo';
+            document.getElementById('login-password').value = 'password';
+        }
+
+        // View profile
+        async function viewProfile() {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+
+            const profileCard = document.getElementById('profile-card');
+            const profileContent = document.getElementById('profile-content');
+            profileContent.innerHTML = '<span class="status loading">Loading profile...</span>';
+            profileCard.style.display = 'block';
+
+            try {
+                const response = await fetch(`${API_BASE}/profile`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    alert('Session expired. Please login again.');
+                    logout();
+                    return;
+                }
+
+                const profile = await response.json();
+
+                if (response.ok) {
+                    profileContent.innerHTML = `
+                        <div class="config-display">
+                            <strong>User ID:</strong> ${profile.userId}<br>
+                            <strong>Username:</strong> ${profile.username}<br>
+                            <strong>Email:</strong> ${profile.email}<br>
+                            <strong>Full Name:</strong> ${profile.fullName}<br>
+                            <strong>Created:</strong> ${new Date(profile.createdAt).toLocaleString()}<br>
+                            <strong>Last Login:</strong> ${profile.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleString() : 'Never'}
+                        </div>
+                        <button onclick="editProfile('${profile.userId}', '${profile.fullName}', '${profile.email}')" style="margin-top: 15px;">Edit Profile</button>
+                        <button class="secondary" onclick="hideProfile()" style="margin-top: 15px;">Close</button>
+                    `;
+
+                    // Log RUM action
+                    if (window.DD_RUM) {
+                        window.DD_RUM.addAction('view_profile', {
+                            userId: profile.userId
+                        });
+                    }
+                } else {
+                    throw new Error('Failed to load profile');
+                }
+            } catch (error) {
+                profileContent.innerHTML = `<span class="status error">✗ Error: ${error.message}</span>`;
+            }
+        }
+
+        // Edit profile
+        function editProfile(userId, currentFullName, currentEmail) {
+            const newFullName = prompt('Enter new full name:', currentFullName);
+            if (newFullName === null) return;
+
+            const newEmail = prompt('Enter new email:', currentEmail);
+            if (newEmail === null) return;
+
+            updateProfile(userId, newFullName, newEmail);
+        }
+
+        // Update profile
+        async function updateProfile(userId, fullName, email) {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+
+            const profileContent = document.getElementById('profile-content');
+            profileContent.innerHTML = '<span class="status loading">Updating profile...</span>';
+
+            try {
+                const response = await fetch(`${API_BASE}/profile`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        username: currentUser.username,
+                        email: email,
+                        fullName: fullName,
+                        createdAt: new Date().toISOString(),
+                        lastLoginAt: new Date().toISOString()
+                    })
+                });
+
+                if (response.status === 401) {
+                    alert('Session expired. Please login again.');
+                    logout();
+                    return;
+                }
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Profile updated successfully!');
+
+                    // Log RUM action
+                    if (window.DD_RUM) {
+                        window.DD_RUM.addAction('update_profile', {
+                            userId: userId
+                        });
+                    }
+
+                    // Refresh profile display
+                    viewProfile();
+                } else {
+                    throw new Error(result.message || 'Failed to update profile');
+                }
+            } catch (error) {
+                profileContent.innerHTML = `<span class="status error">✗ Error: ${error.message}</span>`;
+            }
+        }
+
+        // Hide profile
+        function hideProfile() {
+            document.getElementById('profile-card').style.display = 'none';
         }
 
         // Health Check
@@ -467,9 +807,11 @@
 
         // Auto-check health on load
         window.addEventListener('load', () => {
+            initAuth();
             checkHealth();
             console.log('%c🐕 Datadog MAUI Web Portal', 'font-size: 20px; color: #667eea; font-weight: bold;');
             console.log('API Base URL:', API_BASE);
+            console.log('Authentication:', authToken ? '✅ Logged in as ' + currentUser.username : '❌ Not logged in');
             console.log('Ready for testing!');
         });
     </script>

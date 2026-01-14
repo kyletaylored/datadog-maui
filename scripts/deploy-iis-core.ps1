@@ -5,6 +5,10 @@
     Deploys the .NET Core 9.0 API to IIS
 .DESCRIPTION
     Builds the .NET Core API and deploys it to IIS with proper configuration
+.NOTES
+    IMPORTANT: If running on a remote Windows machine via RDP, copy this script and the
+    entire project folder to a local drive (e.g., C:\temp\datadog-maui) before running.
+    Running PowerShell scripts from \\tsclient\ network shares can cause parsing errors.
 .PARAMETER SiteName
     Name of the IIS website (default: DatadogMauiApi)
 .PARAMETER AppPoolName

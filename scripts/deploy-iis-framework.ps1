@@ -5,6 +5,10 @@
     Deploys the .NET Framework 4.8 API to IIS
 .DESCRIPTION
     Builds the .NET Framework API and deploys it to IIS with proper configuration
+.NOTES
+    IMPORTANT: If running on a remote Windows machine via RDP, copy this script and the
+    entire project folder to a local drive (e.g., C:\temp\datadog-maui) before running.
+    Running PowerShell scripts from \\tsclient\ network shares can cause parsing errors.
 .PARAMETER SiteName
     Name of the IIS website (default: DatadogMauiApiFramework)
 .PARAMETER AppPoolName
@@ -27,7 +31,7 @@ param(
     [int]$Port = 5001,
     [string]$PhysicalPath = "C:\inetpub\wwwroot\datadog-maui-api-framework",
     [string]$DdApiKey = "",
-    [string]$DdEnv = "production"
+    [string]$DdEnv = "dev"
 )
 
 $ErrorActionPreference = "Stop"
@@ -82,9 +86,9 @@ if (-not $nuget) {
 }
 
 # Prompt for Datadog API key if not provided
-if ([string]::IsNullOrEmpty($DdApiKey)) {
-    $DdApiKey = Read-Host "Enter Datadog API key (or press Enter to skip)"
-}
+# if ([string]::IsNullOrEmpty($DdApiKey)) {
+#     $DdApiKey = Read-Host "Enter Datadog API key (or press Enter to skip)"
+# }
 
 Write-Host "[1/8] Restoring NuGet packages..." -ForegroundColor Yellow
 Push-Location ApiFramework
@@ -186,9 +190,9 @@ if (Test-Path $webConfigPath) {
     }
 
     # Set Datadog configuration
-    if (-not [string]::IsNullOrEmpty($DdApiKey)) {
-        Set-AppSetting "DD_API_KEY" $DdApiKey
-    }
+    # if (-not [string]::IsNullOrEmpty($DdApiKey)) {
+    #     Set-AppSetting "DD_API_KEY" $DdApiKey
+    # }
     Set-AppSetting "DD_ENV" $DdEnv
     Set-AppSetting "DD_SERVICE" "datadog-maui-api-framework"
     Set-AppSetting "DD_VERSION" "1.0.0"

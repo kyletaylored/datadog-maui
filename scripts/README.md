@@ -88,8 +88,57 @@ Invoke-RestMethod http://localhost:5000/health
 Invoke-RestMethod http://localhost:5001/health
 ```
 
+## Troubleshooting
+
+### Error: "The output stream for this command is already redirected"
+
+**Problem:** Running the script from an RDP redirected drive (`\\tsclient\...`) causes PowerShell parsing errors.
+
+**Solution:** Copy the entire project folder to a local drive on the Windows machine:
+
+```powershell
+# From the Windows machine, copy from the RDP share to local disk
+Copy-Item -Path "\\tsclient\C\path\to\datadog-maui" -Destination "C:\temp\datadog-maui" -Recurse
+
+# Navigate to the local copy
+cd C:\temp\datadog-maui
+
+# Run the script from the local copy
+.\scripts\deploy-iis-framework.ps1
+```
+
+### Error: Script execution disabled
+
+**Problem:** PowerShell execution policy prevents running scripts.
+
+**Solution:**
+```powershell
+# Check current policy
+Get-ExecutionPolicy
+
+# Allow scripts for current user (recommended)
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Or bypass for single script
+PowerShell -ExecutionPolicy Bypass -File .\scripts\deploy-iis-framework.ps1
+```
+
+### Error: MSBuild not found
+
+**Problem:** Visual Studio Build Tools not installed.
+
+**Solution:**
+```powershell
+# Download and install Visual Studio Build Tools
+# https://visualstudio.microsoft.com/downloads/
+
+# Or via chocolatey
+choco install visualstudio2022buildtools --params "--add Microsoft.VisualStudio.Workload.WebBuildTools"
+```
+
 ## See Also
 
 - [IIS Deployment Guide](../docs/IIS_DEPLOYMENT.md)
 - [.NET Comparison Guide](../docs/DOTNET_COMPARISON.md)
 - [Framework Quick Start](../FRAMEWORK_QUICKSTART.md)
+- [Windows Server Testing Guide](../docs/WINDOWS_SERVER_TESTING.md)

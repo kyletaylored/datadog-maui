@@ -166,32 +166,35 @@ app.MapPut("/profile", (UserProfile updatedProfile, SessionManager sessionManage
 // Health check endpoint
 app.MapGet("/health", (SessionManager sessionManager, ILogger<Program> logger, HttpContext context) =>
 {
-    using var scope = Tracer.Instance.StartActive("health.check");
-    scope.Span.ResourceName = "GET /health";
-    scope.Span.SetTag("service.name", "datadog-maui-api");
-    scope.Span.SetTag("operation.type", "health_check");
-
-    // Check if user is authenticated
-    var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
-    if (!string.IsNullOrEmpty(token))
+    // Get the active span created by automatic instrumentation
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
     {
-        var (isValid, userId) = sessionManager.ValidateSession(token);
-        if (isValid && userId != null)
+        activeScope.Span.ResourceName = "GET /health";
+        activeScope.Span.SetTag("custom.operation.type", "health_check");
+
+        // Check if user is authenticated
+        var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
+        if (!string.IsNullOrEmpty(token))
         {
-            scope.Span.SetTag("user.id", userId);
-            scope.Span.SetTag("authenticated", "true");
-            logger.LogInformation("[Health Check] Service is healthy at {Time} - User: {UserId}", DateTime.UtcNow, userId);
+            var (isValid, userId) = sessionManager.ValidateSession(token);
+            if (isValid && userId != null)
+            {
+                activeScope.Span.SetTag("custom.user.id", userId);
+                activeScope.Span.SetTag("custom.authenticated", "true");
+                logger.LogInformation("[Health Check] Service is healthy at {Time} - User: {UserId}", DateTime.UtcNow, userId);
+            }
+            else
+            {
+                activeScope.Span.SetTag("custom.authenticated", "false");
+                logger.LogInformation("[Health Check] Service is healthy at {Time} - Anonymous", DateTime.UtcNow);
+            }
         }
         else
         {
-            scope.Span.SetTag("authenticated", "false");
+            activeScope.Span.SetTag("custom.authenticated", "false");
             logger.LogInformation("[Health Check] Service is healthy at {Time} - Anonymous", DateTime.UtcNow);
         }
-    }
-    else
-    {
-        scope.Span.SetTag("authenticated", "false");
-        logger.LogInformation("[Health Check] Service is healthy at {Time} - Anonymous", DateTime.UtcNow);
     }
 
     return Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow });
@@ -201,94 +204,121 @@ app.MapGet("/health", (SessionManager sessionManager, ILogger<Program> logger, H
 // Config endpoint - returns dynamic configuration
 app.MapGet("/config", (SessionManager sessionManager, ILogger<Program> logger, HttpContext context) =>
 {
-    using var scope = Tracer.Instance.StartActive("config.get");
-    scope.Span.ResourceName = "GET /config";
-    scope.Span.SetTag("service.name", "datadog-maui-api");
-    scope.Span.SetTag("operation.type", "config_fetch");
+    // Get the active span created by automatic instrumentation
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "GET /config";
+        activeScope.Span.SetTag("custom.operation.type", "config_fetch");
 
-    // Extract correlation ID from headers if present
-    if (context.Request.Headers.TryGetValue("X-Correlation-ID", out var correlationId))
-    {
-        scope.Span.SetTag("correlation.id", correlationId.ToString());
-        logger.LogInformation("[Config] Configuration requested with CorrelationId: {CorrelationId}", correlationId);
-    }
-    else
-    {
-        logger.LogInformation("[Config] Configuration requested");
-    }
-
-    // Check if user is authenticated
-    var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
-    if (!string.IsNullOrEmpty(token))
-    {
-        var (isValid, userId) = sessionManager.ValidateSession(token);
-        if (isValid && userId != null)
+        // Extract correlation ID from headers if present
+        if (context.Request.Headers.TryGetValue("X-Correlation-ID", out var correlationId))
         {
-            scope.Span.SetTag("user.id", userId);
-            scope.Span.SetTag("authenticated", "true");
-            logger.LogInformation("[Config] Configuration requested by user: {UserId}", userId);
+            activeScope.Span.SetTag("custom.correlation.id", correlationId.ToString());
+            logger.LogInformation("[Config] Configuration requested with CorrelationId: {CorrelationId}", correlationId);
         }
         else
         {
-            scope.Span.SetTag("authenticated", "false");
+            logger.LogInformation("[Config] Configuration requested");
         }
-    }
-    else
-    {
-        scope.Span.SetTag("authenticated", "false");
+
+        // Check if user is authenticated
+        var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
+        if (!string.IsNullOrEmpty(token))
+        {
+            var (isValid, userId) = sessionManager.ValidateSession(token);
+            if (isValid && userId != null)
+            {
+                activeScope.Span.SetTag("custom.user.id", userId);
+                activeScope.Span.SetTag("custom.authenticated", "true");
+                logger.LogInformation("[Config] Configuration requested by user: {UserId}", userId);
+            }
+            else
+            {
+                activeScope.Span.SetTag("custom.authenticated", "false");
+            }
+        }
+        else
+        {
+            activeScope.Span.SetTag("custom.authenticated", "false");
+        }
+
+        // Return the web portal URL served from this container
+        // Android emulator uses 10.0.2.2 to access host machine
+        // iOS simulator can use localhost
+        var config = new ConfigResponse(
+            WebViewUrl: "http://10.0.2.2:5000",
+            FeatureFlags: new Dictionary<string, bool>
+            {
+                { "EnableTelemetry", true },
+                { "EnableAdvancedFeatures", false }
+            }
+        );
+
+        activeScope.Span.SetTag("custom.config.webview_url", config.WebViewUrl);
+        activeScope.Span.SetTag("custom.config.feature_flags_count", config.FeatureFlags.Count.ToString());
+
+        return Results.Ok(config);
     }
 
-    // Return the web portal URL served from this container
-    // Android emulator uses 10.0.2.2 to access host machine
-    // iOS simulator can use localhost
-    var config = new ConfigResponse(
+    // Fallback if no active span
+    return Results.Ok(new ConfigResponse(
         WebViewUrl: "http://10.0.2.2:5000",
         FeatureFlags: new Dictionary<string, bool>
         {
             { "EnableTelemetry", true },
             { "EnableAdvancedFeatures", false }
         }
-    );
-
-    scope.Span.SetTag("config.webview_url", config.WebViewUrl);
-    scope.Span.SetTag("config.feature_flags_count", config.FeatureFlags.Count);
-
-    return Results.Ok(config);
+    ));
 })
 .WithName("GetConfig");
 
 // Data submission endpoint
 app.MapPost("/data", (DataSubmission submission, SessionManager sessionManager, ILogger<Program> logger, HttpContext context) =>
 {
-    using var scope = Tracer.Instance.StartActive("data.submit");
-    scope.Span.ResourceName = "POST /data";
-    scope.Span.SetTag("service.name", "datadog-maui-api");
-    scope.Span.SetTag("operation.type", "data_submission");
-    scope.Span.SetTag("correlation.id", submission.CorrelationId);
-    scope.Span.SetTag("data.session_name", submission.SessionName);
-    scope.Span.SetTag("data.numeric_value", submission.NumericValue);
-
-    // Check if user is authenticated
-    var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
-    if (!string.IsNullOrEmpty(token))
+    // Get the active span created by automatic instrumentation
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
     {
-        var (isValid, userId) = sessionManager.ValidateSession(token);
-        if (isValid && userId != null)
+        activeScope.Span.ResourceName = "POST /data";
+        activeScope.Span.SetTag("custom.operation.type", "data_submission");
+        activeScope.Span.SetTag("custom.correlation.id", submission.CorrelationId);
+        activeScope.Span.SetTag("custom.data.session_name", submission.SessionName);
+        activeScope.Span.SetTag("custom.data.numeric_value", submission.NumericValue.ToString());
+
+        // Check if user is authenticated
+        var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
+        if (!string.IsNullOrEmpty(token))
         {
-            scope.Span.SetTag("user.id", userId);
-            scope.Span.SetTag("authenticated", "true");
-            logger.LogInformation(
-                "[Data Submission] User: {UserId}, CorrelationId: {CorrelationId}, SessionName: {SessionName}, Notes: {Notes}, NumericValue: {NumericValue}",
-                userId,
-                submission.CorrelationId,
-                submission.SessionName,
-                submission.Notes,
-                submission.NumericValue
-            );
+            var (isValid, userId) = sessionManager.ValidateSession(token);
+            if (isValid && userId != null)
+            {
+                activeScope.Span.SetTag("custom.user.id", userId);
+                activeScope.Span.SetTag("custom.authenticated", "true");
+                logger.LogInformation(
+                    "[Data Submission] User: {UserId}, CorrelationId: {CorrelationId}, SessionName: {SessionName}, Notes: {Notes}, NumericValue: {NumericValue}",
+                    userId,
+                    submission.CorrelationId,
+                    submission.SessionName,
+                    submission.Notes,
+                    submission.NumericValue
+                );
+            }
+            else
+            {
+                activeScope.Span.SetTag("custom.authenticated", "false");
+                logger.LogInformation(
+                    "[Data Submission] CorrelationId: {CorrelationId}, SessionName: {SessionName}, Notes: {Notes}, NumericValue: {NumericValue}",
+                    submission.CorrelationId,
+                    submission.SessionName,
+                    submission.Notes,
+                    submission.NumericValue
+                );
+            }
         }
         else
         {
-            scope.Span.SetTag("authenticated", "false");
+            activeScope.Span.SetTag("custom.authenticated", "false");
             logger.LogInformation(
                 "[Data Submission] CorrelationId: {CorrelationId}, SessionName: {SessionName}, Notes: {Notes}, NumericValue: {NumericValue}",
                 submission.CorrelationId,
@@ -297,26 +327,15 @@ app.MapPost("/data", (DataSubmission submission, SessionManager sessionManager, 
                 submission.NumericValue
             );
         }
+
+        // Store the submission
+        dataStore.Add(submission);
+
+        logger.LogInformation("[Data Store] Total submissions: {Count}", dataStore.Count);
+
+        activeScope.Span.SetTag("custom.data.total_submissions", dataStore.Count.ToString());
+        activeScope.Span.SetTag("custom.submission.success", "true");
     }
-    else
-    {
-        scope.Span.SetTag("authenticated", "false");
-        logger.LogInformation(
-            "[Data Submission] CorrelationId: {CorrelationId}, SessionName: {SessionName}, Notes: {Notes}, NumericValue: {NumericValue}",
-            submission.CorrelationId,
-            submission.SessionName,
-            submission.Notes,
-            submission.NumericValue
-        );
-    }
-
-    // Store the submission
-    dataStore.Add(submission);
-
-    logger.LogInformation("[Data Store] Total submissions: {Count}", dataStore.Count);
-
-    scope.Span.SetTag("data.total_submissions", dataStore.Count);
-    scope.Span.SetTag("submission.success", "true");
 
     return Results.Ok(new
     {
@@ -331,33 +350,36 @@ app.MapPost("/data", (DataSubmission submission, SessionManager sessionManager, 
 // Bonus: Get all submitted data (for debugging)
 app.MapGet("/data", (SessionManager sessionManager, ILogger<Program> logger, HttpContext context) =>
 {
-    using var scope = Tracer.Instance.StartActive("data.get_all");
-    scope.Span.ResourceName = "GET /data";
-    scope.Span.SetTag("service.name", "datadog-maui-api");
-    scope.Span.SetTag("operation.type", "data_retrieval");
-    scope.Span.SetTag("data.count", dataStore.Count);
-
-    // Check if user is authenticated
-    var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
-    if (!string.IsNullOrEmpty(token))
+    // Get the active span created by automatic instrumentation
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
     {
-        var (isValid, userId) = sessionManager.ValidateSession(token);
-        if (isValid && userId != null)
+        activeScope.Span.ResourceName = "GET /data";
+        activeScope.Span.SetTag("custom.operation.type", "data_retrieval");
+        activeScope.Span.SetTag("custom.data.count", dataStore.Count.ToString());
+
+        // Check if user is authenticated
+        var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
+        if (!string.IsNullOrEmpty(token))
         {
-            scope.Span.SetTag("user.id", userId);
-            scope.Span.SetTag("authenticated", "true");
-            logger.LogInformation("[Data Retrieval] Fetching all submissions for user: {UserId}. Count: {Count}", userId, dataStore.Count);
+            var (isValid, userId) = sessionManager.ValidateSession(token);
+            if (isValid && userId != null)
+            {
+                activeScope.Span.SetTag("custom.user.id", userId);
+                activeScope.Span.SetTag("custom.authenticated", "true");
+                logger.LogInformation("[Data Retrieval] Fetching all submissions for user: {UserId}. Count: {Count}", userId, dataStore.Count);
+            }
+            else
+            {
+                activeScope.Span.SetTag("custom.authenticated", "false");
+                logger.LogInformation("[Data Retrieval] Fetching all submissions. Count: {Count}", dataStore.Count);
+            }
         }
         else
         {
-            scope.Span.SetTag("authenticated", "false");
+            activeScope.Span.SetTag("custom.authenticated", "false");
             logger.LogInformation("[Data Retrieval] Fetching all submissions. Count: {Count}", dataStore.Count);
         }
-    }
-    else
-    {
-        scope.Span.SetTag("authenticated", "false");
-        logger.LogInformation("[Data Retrieval] Fetching all submissions. Count: {Count}", dataStore.Count);
     }
 
     return Results.Ok(dataStore.ToList());

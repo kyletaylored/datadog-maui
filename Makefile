@@ -45,6 +45,12 @@ help:
 	@echo "  make datadog-build-ios       Build Datadog iOS bindings"
 	@echo "  make datadog-build-all       Build all Datadog bindings"
 	@echo ""
+	@echo "Azure Deployment Commands:"
+	@echo "  make azure-deploy        Deploy API to Azure App Service"
+	@echo "  make azure-logs          View Azure App Service logs"
+	@echo "  make azure-status        Show Azure App Service status"
+	@echo "  make azure-health        Test Azure deployment health"
+	@echo ""
 	@echo "Quick Commands:"
 	@echo "  make all             Build API and Android app"
 	@echo "  make test            Start API and run tests"
@@ -280,6 +286,26 @@ docs:
 	@echo "     - setup/               # Setup guides"
 	@echo "     - guides/              # Feature guides"
 	@echo "     - reference/           # Technical reference"
+
+# =============================================================================
+# Azure Deployment Commands
+# =============================================================================
+
+azure-deploy:
+	@echo "🚀 Deploying to Azure App Service..."
+	@bash ./scripts/deploy-azure.sh
+
+azure-logs:
+	@echo "📋 Showing Azure App Service logs..."
+	@az webapp log tail --name $${AZURE_APP_NAME:-datadog-maui-api} --resource-group $${AZURE_RESOURCE_GROUP:-datadog-maui-rg}
+
+azure-status:
+	@echo "📊 Azure App Service Status:"
+	@az webapp show --name $${AZURE_APP_NAME:-datadog-maui-api} --resource-group $${AZURE_RESOURCE_GROUP:-datadog-maui-rg} --query "{name:name,state:state,hostNames:defaultHostName}" -o table
+
+azure-health:
+	@echo "🏥 Testing Azure deployment health..."
+	@curl -s https://$${AZURE_APP_NAME:-datadog-maui-api}.azurewebsites.net/health | jq || echo "❌ Failed"
 
 # =============================================================================
 # Datadog Commands

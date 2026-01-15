@@ -321,6 +321,87 @@ cd C:\Users\datadog\Desktop\datadog-maui
 
 ---
 
+## Datadog APM Tracing Issues
+
+### 8. APM Tracing Not Working After Installation
+
+**Symptoms:**
+- Datadog agent is installed and running
+- Application works but traces don't appear in Datadog
+- No automatic instrumentation happening
+- Environment variables appear to be set correctly
+
+**Cause:** Datadog .NET tracer installation may reuse existing configuration that doesn't have APM enabled, or the configuration wasn't properly applied.
+
+**Solution:**
+
+**Complete Fresh Install:**
+
+1. **Uninstall Datadog .NET Tracer:**
+```powershell
+# Find and uninstall via Programs and Features, or:
+$app = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -like "*Datadog*" }
+$app.Uninstall()
+```
+
+2. **Delete existing Datadog configuration directories:**
+```powershell
+# Remove ProgramData configuration (this is the key step!)
+Remove-Item "C:\ProgramData\Datadog" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item "C:\ProgramData\Datadog .NET Tracer" -Recurse -Force -ErrorAction SilentlyContinue
+
+# Remove Program Files installation
+Remove-Item "C:\Program Files\Datadog" -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item "C:\Program Files\Datadog .NET Tracer" -Recurse -Force -ErrorAction SilentlyContinue
+```
+
+3. **Reinstall Datadog .NET Tracer:**
+   - Download from [Datadog .NET Tracer releases](https://github.com/DataDog/dd-trace-dotnet/releases/latest)
+   - Run the installer as Administrator
+   - Follow the installation wizard
+
+4. **Restart IIS properly:**
+```powershell
+# Stop IIS completely
+net stop /y was
+
+# Start IIS
+net start w3svc
+```
+
+**Note:** Using `iisreset` may not fully restart the IIS worker processes. The `net stop was` command (Windows Activation Service) ensures a complete shutdown of all IIS-related processes, including worker processes, before restarting.
+
+5. **Verify APM is working:**
+```powershell
+# Make a request to your application
+Invoke-RestMethod http://localhost:5001/health
+
+# Check for Datadog environment variables in the app pool
+$env:COR_ENABLE_PROFILING
+$env:COR_PROFILER
+$env:DD_DOTNET_TRACER_HOME
+```
+
+6. **Check Datadog agent logs:**
+```powershell
+Get-Content "C:\ProgramData\Datadog\logs\trace-agent.log" -Tail 50
+```
+
+**Why this works:** If Datadog finds existing configuration in `C:\ProgramData\Datadog`, it may reuse settings that don't have APM/tracing enabled. Deleting these directories forces a completely fresh installation with default settings that enable APM tracing.
+
+**Important:** After reinstallation, verify that your application pool has the correct environment variables set. The Datadog installer should set these globally, but you can also set them per application pool if needed:
+
+```powershell
+$appPoolName = "DatadogMauiApiFrameworkPool"
+Set-ItemProperty "IIS:\AppPools\$appPoolName" -Name "environmentVariables" -Value @{
+    "COR_ENABLE_PROFILING" = "1"
+    "COR_PROFILER" = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+    "DD_DOTNET_TRACER_HOME" = "C:\Program Files\Datadog\.NET Tracer"
+}
+```
+
+---
+
 ## Getting Help
 
 If you're still experiencing issues:

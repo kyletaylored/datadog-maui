@@ -78,6 +78,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Web.config" />
+    <Content Include="index.html" />
     <Content Include="wwwroot\index.html" />
   </ItemGroup>
   <ItemGroup>

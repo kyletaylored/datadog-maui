@@ -63,14 +63,28 @@ namespace DatadogMauiApi.Framework.Controllers
 
                 activeScope.Span.SetTag("custom.data.total_submissions", DataStore.Count.ToString());
                 activeScope.Span.SetTag("custom.submission.success", "true");
+
+                // Return response with trace IDs
+                return Ok(new
+                {
+                    isSuccessful = true,
+                    message = "Data received successfully",
+                    correlationId = submission.CorrelationId,
+                    timestamp = DateTime.UtcNow,
+                    traceId = activeScope.Span.TraceId.ToString(),
+                    spanId = activeScope.Span.SpanId.ToString()
+                });
             }
 
+            // Fallback if no active span
             return Ok(new
             {
                 isSuccessful = true,
                 message = "Data received successfully",
                 correlationId = submission.CorrelationId,
-                timestamp = DateTime.UtcNow
+                timestamp = DateTime.UtcNow,
+                traceId = "0",
+                spanId = "0"
             });
         }
 

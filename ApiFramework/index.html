@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Datadog MAUI - Web Portal (.NET Framework)</title>
+    <!-- Load RUM configuration from server -->
+    <script src="/rum-config.js"></script>
     <script>
         (function(h,o,u,n,d) {
             h=h[d]=h[d]||{q:[],onReady:function(c){h.q.push(c)}}
@@ -11,23 +13,28 @@
             n=o.getElementsByTagName(u)[0];n.parentNode.insertBefore(d,n)
         })(window,document,'script','https://www.datadoghq-browser-agent.com/us1/v6/datadog-rum.js','DD_RUM')
         window.DD_RUM.onReady(function() {
-            window.DD_RUM.init({
-            clientToken: 'PLACEHOLDER_CLIENT_TOKEN',
-            applicationId: 'PLACEHOLDER_APPLICATION_ID',
-            site: 'datadoghq.com',
-            service: 'datadog-maui-web-framework',
-            env: 'local',
-            version: '1.0.0',
-            sessionSampleRate: 100,
-            sessionReplaySampleRate: 100,
-            trackBfcacheViews: true,
-            defaultPrivacyLevel: 'mask-user-input',
-            allowedTracingUrls: [
-                "localhost",
-                "127.0.0.1",
-                (url) => url.length > 0,
-            ],
-            });
+            // Use server-provided configuration if available, otherwise use defaults
+            var config = window.DD_RUM_CONFIG || {
+                clientToken: '',
+                applicationId: '',
+                site: 'datadoghq.com',
+                service: 'datadog-maui-web-framework',
+                env: 'local',
+                version: '1.0.0',
+                sessionSampleRate: 100,
+                sessionReplaySampleRate: 100,
+                trackBfcacheViews: true,
+                defaultPrivacyLevel: 'mask-user-input',
+                allowedTracingUrls: ["localhost", "127.0.0.1"]
+            };
+
+            // Only initialize if we have valid credentials
+            if (config.clientToken && config.applicationId) {
+                window.DD_RUM.init(config);
+                console.log('[Datadog] RUM initialized');
+            } else {
+                console.warn('[Datadog] RUM not initialized - missing credentials in Web.config');
+            }
         })
     </script>
     <style>
@@ -546,7 +553,7 @@
             profileCard.style.display = 'block';
 
             try {
-                const response = await fetch(`${API_BASE}/user/profile`, {
+                const response = await fetch(`${API_BASE}/profile`, {
                     headers: {
                         'Authorization': `Bearer ${authToken}`
                     }
@@ -610,7 +617,7 @@
             profileContent.innerHTML = '<span class="status loading">Updating profile...</span>';
 
             try {
-                const response = await fetch(`${API_BASE}/user/profile`, {
+                const response = await fetch(`${API_BASE}/profile`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': `Bearer ${authToken}`,

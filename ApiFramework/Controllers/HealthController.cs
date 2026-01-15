@@ -17,6 +17,26 @@ namespace DatadogMauiApi.Framework.Controllers
         }
 
         [HttpGet]
+        [Route("")]
+        public IHttpActionResult GetRoot()
+        {
+            return Ok(new
+            {
+                service = "Datadog MAUI API (.NET Framework 4.8)",
+                status = "running",
+                version = "1.0.0",
+                endpoints = new
+                {
+                    health = "/health",
+                    auth = "/auth/login",
+                    profile = "/user/profile",
+                    config = "/config",
+                    data = "/data"
+                }
+            });
+        }
+
+        [HttpGet]
         [Route("health")]
         public IHttpActionResult GetHealth()
         {

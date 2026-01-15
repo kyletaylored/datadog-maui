@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Datadog MAUI - Web Portal (.NET Framework)</title>
+    <script>
+        (function(h,o,u,n,d) {
+            h=h[d]=h[d]||{q:[],onReady:function(c){h.q.push(c)}}
+            d=o.createElement(u);d.async=1;d.src=n
+            n=o.getElementsByTagName(u)[0];n.parentNode.insertBefore(d,n)
+        })(window,document,'script','https://www.datadoghq-browser-agent.com/us1/v6/datadog-rum.js','DD_RUM')
+        window.DD_RUM.onReady(function() {
+            window.DD_RUM.init({
+            clientToken: 'PLACEHOLDER_CLIENT_TOKEN',
+            applicationId: 'PLACEHOLDER_APPLICATION_ID',
+            site: 'datadoghq.com',
+            service: 'datadog-maui-web-framework',
+            env: 'local',
+            version: '1.0.0',
+            sessionSampleRate: 100,
+            sessionReplaySampleRate: 100,
+            trackBfcacheViews: true,
+            defaultPrivacyLevel: 'mask-user-input',
+            allowedTracingUrls: [
+                "localhost",
+                "127.0.0.1",
+                (url) => url.length > 0,
+            ],
+            });
+        })
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-left h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info {
+            text-align: right;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: #667eea;
+            font-size: 1.1rem;
+        }
+
+        .user-id {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 200px;
+        }
+
+        .login-form input {
+            padding: 8px;
+            border: 2px solid #e5e7eb;
+            border-radius: 5px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button.secondary {
+            background: #6b7280;
+        }
+
+        button.secondary:hover {
+            background: #4b5563;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .status {
+            padding: 8px 15px;
+            border-radius: 5px;
+            display: inline-block;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+
+        .status.healthy {
+            background: #10b981;
+            color: white;
+        }
+
+        .status.error {
+            background: #ef4444;
+            color: white;
+        }
+
+        .status.loading {
+            background: #f59e0b;
+            color: white;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 5px 5px 5px 0;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .data-list {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .data-item {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .data-item strong {
+            color: #667eea;
+        }
+
+        .data-item p {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .timestamp {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        .trace-info {
+            background: #eff6ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .response-box {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+        }
+
+        .config-display {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .config-display pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            margin-top: 30px;
+        }
+
+        footer a {
+            color: white;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>🐕 Datadog MAUI - Web Portal</h1>
+                    <p class="subtitle">.NET Framework 4.8 API - Interactive Dashboard</p>
+                </div>
+                <div class="user-section">
+                    <div id="auth-section">
+                        <!-- Login form shown by default -->
+                        <div id="login-form-container" class="login-form">
+                            <input type="text" id="login-username" placeholder="Username" value="demo">
+                            <input type="password" id="login-password" placeholder="Password" value="password">
+                            <button onclick="login()">Login</button>
+                            <p style="font-size: 0.85rem; color: #999; margin-top: 5px;">
+                                Try: demo/password, admin/password, or test/password
+                            </p>
+                        </div>
+                        <!-- User info shown after login -->
+                        <div id="user-info-container" class="user-info" style="display: none;">
+                            <div class="user-name" id="user-name"></div>
+                            <div class="user-id" id="user-id"></div>
+                            <div class="button-group" style="margin-top: 10px;">
+                                <button onclick="viewProfile()">View Profile</button>
+                                <button class="secondary" onclick="logout()">Logout</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Profile Card (shown when logged in) -->
+        <div class="card" id="profile-card" style="display: none; margin-bottom: 30px;">
+            <h2>👤 User Profile</h2>
+            <div id="profile-content"></div>
+        </div>
+
+        <div class="grid">
+            <!-- Health Check Card -->
+            <div class="card">
+                <h2>🏥 Health Check</h2>
+                <p>Check if the API is running and responsive.</p>
+                <button onclick="checkHealth()">Check Health</button>
+                <div id="health-status"></div>
+            </div>
+
+            <!-- Configuration Card -->
+            <div class="card">
+                <h2>⚙️ Configuration</h2>
+                <p>Fetch current API configuration and feature flags.</p>
+                <button onclick="getConfig()">Get Configuration</button>
+                <div id="config-display"></div>
+            </div>
+
+            <!-- Submit Data Card -->
+            <div class="card">
+                <h2>📝 Submit Data</h2>
+                <form id="submit-form" onsubmit="submitData(event)">
+                    <div class="form-group">
+                        <label>Session Name</label>
+                        <input type="text" id="session-name" placeholder="My Test Session" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="notes" placeholder="Enter your notes here..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Numeric Value</label>
+                        <input type="number" id="numeric-value" step="0.01" placeholder="42.5" required>
+                    </div>
+                    <button type="submit">Submit Data</button>
+                </form>
+                <div id="submit-response"></div>
+            </div>
+        </div>
+
+        <!-- Data Display Card (Full Width) -->
+        <div class="card">
+            <h2>📊 Submitted Data</h2>
+            <p>View all data submissions with Datadog trace information.</p>
+            <button onclick="loadData()">Refresh Data</button>
+            <button onclick="clearDataDisplay()">Clear Display</button>
+            <div id="data-list"></div>
+        </div>
+
+        <footer>
+            <p>
+                Built with ❤️ for Datadog Integration Testing
+                <br>
+                <a href="https://docs.datadoghq.com/" target="_blank">Datadog Documentation</a>
+                |
+                <a href="https://app.datadoghq.com/apm/traces" target="_blank">View Traces</a>
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let authToken = localStorage.getItem('authToken');
+        let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+        // Initialize auth state on page load
+        function initAuth() {
+            if (authToken && currentUser) {
+                showUserInfo(currentUser);
+                setDatadogUser(currentUser);
+            }
+        }
+
+        // Generate correlation ID for requests
+        function generateCorrelationId() {
+            return 'web-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Login
+        async function login() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            if (!username || !password) {
+                alert('Please enter username and password');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Store auth info
+                    authToken = data.token;
+                    currentUser = {
+                        userId: data.userId,
+                        username: data.username
+                    };
+                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+                    // Update UI
+                    showUserInfo(currentUser);
+
+                    // Set Datadog RUM user context
+                    setDatadogUser(currentUser);
+
+                    // Log success action in RUM
+                    if (window.DD_RUM) {
+                        window.DD_RUM.addAction('user_login', {
+                            username: currentUser.username,
+                            userId: currentUser.userId
+                        });
+                    }
+
+                    console.log('✅ Login successful:', currentUser);
+                } else {
+                    alert(data.message || 'Login failed');
+                }
+            } catch (error) {
+                alert('Login error: ' + error.message);
+                console.error('Login error:', error);
+            }
+        }
+
+        // Logout
+        async function logout() {
+            try {
+                if (authToken) {
+                    await fetch(`${API_BASE}/auth/logout`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    });
+                }
+
+                // Clear local storage
+                authToken = null;
+                currentUser = null;
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('currentUser');
+
+                // Clear Datadog RUM user
+                if (window.DD_RUM) {
+                    window.DD_RUM.clearUser();
+                    window.DD_RUM.addAction('user_logout');
+                }
+
+                // Update UI
+                showLoginForm();
+                hideProfile();
+
+                console.log('✅ Logout successful');
+            } catch (error) {
+                console.error('Logout error:', error);
+            }
+        }
+
+        // Set Datadog RUM user context
+        function setDatadogUser(user) {
+            if (window.DD_RUM && user) {
+                window.DD_RUM.setUser({
+                    id: user.userId,
+                    name: user.username,
+                    email: user.username + '@example.com'
+                });
+                console.log('✅ Datadog RUM user set:', user);
+            }
+        }
+
+        // Show user info
+        function showUserInfo(user) {
+            document.getElementById('login-form-container').style.display = 'none';
+            document.getElementById('user-info-container').style.display = 'block';
+            document.getElementById('user-name').textContent = '👋 ' + user.username;
+            document.getElementById('user-id').textContent = 'User ID: ' + user.userId;
+        }
+
+        // Show login form
+        function showLoginForm() {
+            document.getElementById('login-form-container').style.display = 'flex';
+            document.getElementById('user-info-container').style.display = 'none';
+            document.getElementById('login-username').value = 'demo';
+            document.getElementById('login-password').value = 'password';
+        }
+
+        // View profile
+        async function viewProfile() {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+
+            const profileCard = document.getElementById('profile-card');
+            const profileContent = document.getElementById('profile-content');
+            profileContent.innerHTML = '<span class="status loading">Loading profile...</span>';
+            profileCard.style.display = 'block';
+
+            try {
+                const response = await fetch(`${API_BASE}/user/profile`, {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    alert('Session expired. Please login again.');
+                    logout();
+                    return;
+                }
+
+                const profile = await response.json();
+
+                if (response.ok) {
+                    profileContent.innerHTML = `
+                        <div class="config-display">
+                            <strong>User ID:</strong> ${profile.userId}<br>
+                            <strong>Username:</strong> ${profile.username}<br>
+                            <strong>Email:</strong> ${profile.email}<br>
+                            <strong>Full Name:</strong> ${profile.fullName}<br>
+                            <strong>Created:</strong> ${new Date(profile.createdAt).toLocaleString()}<br>
+                            <strong>Last Login:</strong> ${profile.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleString() : 'Never'}
+                        </div>
+                        <button onclick="editProfile('${profile.userId}', '${profile.fullName}', '${profile.email}')" style="margin-top: 15px;">Edit Profile</button>
+                        <button class="secondary" onclick="hideProfile()" style="margin-top: 15px;">Close</button>
+                    `;
+
+                    // Log RUM action
+                    if (window.DD_RUM) {
+                        window.DD_RUM.addAction('view_profile', {
+                            userId: profile.userId
+                        });
+                    }
+                } else {
+                    throw new Error('Failed to load profile');
+                }
+            } catch (error) {
+                profileContent.innerHTML = `<span class="status error">✗ Error: ${error.message}</span>`;
+            }
+        }
+
+        // Edit profile
+        function editProfile(userId, currentFullName, currentEmail) {
+            const newFullName = prompt('Enter new full name:', currentFullName);
+            if (newFullName === null) return;
+
+            const newEmail = prompt('Enter new email:', currentEmail);
+            if (newEmail === null) return;
+
+            updateProfile(userId, newFullName, newEmail);
+        }
+
+        // Update profile
+        async function updateProfile(userId, fullName, email) {
+            if (!authToken) {
+                alert('Please login first');
+                return;
+            }
+
+            const profileContent = document.getElementById('profile-content');
+            profileContent.innerHTML = '<span class="status loading">Updating profile...</span>';
+
+            try {
+                const response = await fetch(`${API_BASE}/user/profile`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        username: currentUser.username,
+                        email: email,
+                        fullName: fullName,
+                        createdAt: new Date().toISOString(),
+                        lastLoginAt: new Date().toISOString()
+                    })
+                });
+
+                if (response.status === 401) {
+                    alert('Session expired. Please login again.');
+                    logout();
+                    return;
+                }
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert('Profile updated successfully!');
+
+                    // Log RUM action
+                    if (window.DD_RUM) {
+                        window.DD_RUM.addAction('update_profile', {
+                            userId: userId
+                        });
+                    }
+
+                    // Refresh profile display
+                    viewProfile();
+                } else {
+                    throw new Error(result.message || 'Failed to update profile');
+                }
+            } catch (error) {
+                profileContent.innerHTML = `<span class="status error">✗ Error: ${error.message}</span>`;
+            }
+        }
+
+        // Hide profile
+        function hideProfile() {
+            document.getElementById('profile-card').style.display = 'none';
+        }
+
+        // Health Check
+        async function checkHealth() {
+            const statusDiv = document.getElementById('health-status');
+            statusDiv.innerHTML = '<span class="status loading">Checking...</span>';
+
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    statusDiv.innerHTML = `
+                        <span class="status healthy">✓ Healthy</span>
+                        <div class="response-box">
+                            <strong>Status:</strong> ${data.status}<br>
+                            <strong>Timestamp:</strong> ${new Date(data.timestamp).toLocaleString()}
+                        </div>
+                    `;
+                } else {
+                    throw new Error('Health check failed');
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<span class="status error">✗ Error: ${error.message}</span>`;
+            }
+        }
+
+        // Get Configuration
+        async function getConfig() {
+            const displayDiv = document.getElementById('config-display');
+            displayDiv.innerHTML = '<span class="status loading">Loading...</span>';
+
+            try {
+                const correlationId = generateCorrelationId();
+                const response = await fetch(`${API_BASE}/config`, {
+                    headers: {
+                        'X-Correlation-ID': correlationId
+                    }
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayDiv.innerHTML = `
+                        <div class="config-display">
+                            <strong>WebView URL:</strong> <a href="${data.webViewUrl}" target="_blank">${data.webViewUrl}</a><br>
+                            <strong>Feature Flags:</strong>
+                            <pre>${JSON.stringify(data.featureFlags, null, 2)}</pre>
+                        </div>
+                        <div class="trace-info">
+                            <strong>Correlation ID:</strong> ${correlationId}
+                        </div>
+                    `;
+                } else {
+                    throw new Error('Failed to load config');
+                }
+            } catch (error) {
+                displayDiv.innerHTML = `<span class="status error">✗ Error: ${error.message}</span>`;
+            }
+        }
+
+        // Submit Data
+        async function submitData(event) {
+            event.preventDefault();
+
+            const responseDiv = document.getElementById('submit-response');
+            responseDiv.innerHTML = '<span class="status loading">Submitting...</span>';
+
+            const sessionName = document.getElementById('session-name').value;
+            const notes = document.getElementById('notes').value;
+            const numericValue = parseFloat(document.getElementById('numeric-value').value);
+            const correlationId = generateCorrelationId();
+
+            try {
+                const response = await fetch(`${API_BASE}/data`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        correlationId: correlationId,
+                        sessionName: sessionName,
+                        notes: notes,
+                        numericValue: numericValue
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    responseDiv.innerHTML = `
+                        <span class="status healthy">✓ Success</span>
+                        <div class="response-box">
+                            <strong>Message:</strong> ${data.message}<br>
+                            <strong>Timestamp:</strong> ${new Date(data.timestamp).toLocaleString()}
+                        </div>
+                        <div class="trace-info">
+                            <strong>Correlation ID:</strong> ${data.correlationId}<br>
+                            <strong>Trace ID:</strong> ${data.traceId}<br>
+                            <strong>Span ID:</strong> ${data.spanId}
+                        </div>
+                    `;
+
+                    // Clear form
+                    document.getElementById('submit-form').reset();
+
+                    // Auto-refresh data list
+                    loadData();
+                } else {
+                    throw new Error('Submission failed');
+                }
+            } catch (error) {
+                responseDiv.innerHTML = `<span class="status error">✗ Error: ${error.message}</span>`;
+            }
+        }
+
+        // Load Data
+        async function loadData() {
+            const listDiv = document.getElementById('data-list');
+            listDiv.innerHTML = '<span class="status loading">Loading...</span>';
+
+            try {
+                const response = await fetch(`${API_BASE}/data`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (data.length === 0) {
+                        listDiv.innerHTML = '<div class="empty-state">No data submitted yet. Submit some data above!</div>';
+                    } else {
+                        listDiv.innerHTML = '<div class="data-list">' +
+                            data.map(item => `
+                                <div class="data-item">
+                                    <strong>Session:</strong> ${item.sessionName}<br>
+                                    <strong>Notes:</strong> ${item.notes || '(none)'}<br>
+                                    <strong>Value:</strong> ${item.numericValue}<br>
+                                    <strong>Correlation ID:</strong> ${item.correlationId}<br>
+                                    <span class="timestamp">${new Date(item.timestamp).toLocaleString()}</span>
+                                </div>
+                            `).join('') +
+                        '</div>';
+                    }
+                } else {
+                    throw new Error('Failed to load data');
+                }
+            } catch (error) {
+                listDiv.innerHTML = `<span class="status error">✗ Error: ${error.message}</span>`;
+            }
+        }
+
+        // Clear Data Display
+        function clearDataDisplay() {
+            document.getElementById('data-list').innerHTML = '<div class="empty-state">Click "Refresh Data" to load submissions</div>';
+        }
+
+        // Auto-check health on load
+        window.addEventListener('load', () => {
+            initAuth();
+            checkHealth();
+            console.log('%c🐕 Datadog MAUI Web Portal (.NET Framework)', 'font-size: 20px; color: #667eea; font-weight: bold;');
+            console.log('API Base URL:', API_BASE);
+            console.log('Authentication:', authToken ? '✅ Logged in as ' + currentUser.username : '❌ Not logged in');
+            console.log('Ready for testing!');
+        });
+    </script>
+</body>
+</html>

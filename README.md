@@ -393,6 +393,7 @@ All telemetry events are logged to the console. In production, integrate with a 
 
 ### Deployment
 - [IIS Deployment Guide](docs/IIS_DEPLOYMENT.md) - Deploy to Windows IIS (Core + Framework)
+- [IIS Troubleshooting Guide](docs/IIS_TROUBLESHOOTING.md) - Fix common IIS deployment issues
 - [IIS Deployment Scripts](scripts/README.md) - PowerShell automation for IIS
 - [.NET Framework Quick Start](FRAMEWORK_QUICKSTART.md) - Quick reference for .NET Framework 4.8
 - [.NET Comparison Guide](docs/DOTNET_COMPARISON.md) - Core vs Framework side-by-side

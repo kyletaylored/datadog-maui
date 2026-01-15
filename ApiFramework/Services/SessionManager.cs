@@ -9,10 +9,14 @@ namespace DatadogMauiApi.Framework.Services
 {
     public class SessionManager
     {
+        // Singleton instance to share sessions across all controllers
+        private static readonly Lazy<SessionManager> _instance = new Lazy<SessionManager>(() => new SessionManager());
+        public static SessionManager Instance => _instance.Value;
+
         private readonly ConcurrentDictionary<string, UserProfile> _users;
         private readonly ConcurrentDictionary<string, Tuple<string, DateTime>> _sessions;
 
-        public SessionManager()
+        private SessionManager()
         {
             _users = new ConcurrentDictionary<string, UserProfile>();
             _sessions = new ConcurrentDictionary<string, Tuple<string, DateTime>>();

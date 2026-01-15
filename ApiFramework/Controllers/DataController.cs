@@ -16,7 +16,7 @@ namespace DatadogMauiApi.Framework.Controllers
 
         public DataController()
         {
-            _sessionManager = new SessionManager();
+            _sessionManager = SessionManager.Instance;
         }
 
         [HttpPost]

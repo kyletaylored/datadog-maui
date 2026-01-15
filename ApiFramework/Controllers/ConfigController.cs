@@ -14,7 +14,7 @@ namespace DatadogMauiApi.Framework.Controllers
 
         public ConfigController()
         {
-            _sessionManager = new SessionManager();
+            _sessionManager = SessionManager.Instance;
         }
 
         [HttpGet]

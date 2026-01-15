@@ -74,7 +74,7 @@ namespace DatadogMauiApi.Framework.Controllers
                 return Ok(new { message = "Profile updated successfully" });
             }
 
-            return BadRequest(new { message = "Profile update failed" });
+            return Content(System.Net.HttpStatusCode.BadRequest, new { message = "Profile update failed" });
         }
     }
 }

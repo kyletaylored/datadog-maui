@@ -41,7 +41,7 @@ namespace DatadogMauiApi.Framework.Controllers
             var authHeader = Request.Headers.Authorization;
             if (authHeader == null || string.IsNullOrEmpty(authHeader.Parameter))
             {
-                return BadRequest(new { message = "No token provided" });
+                return Content(System.Net.HttpStatusCode.BadRequest, new { message = "No token provided" });
             }
 
             var success = _sessionManager.Logout(authHeader.Parameter);
@@ -51,7 +51,7 @@ namespace DatadogMauiApi.Framework.Controllers
                 return Ok(new { message = "Logged out successfully" });
             }
 
-            return BadRequest(new { message = "Logout failed" });
+            return Content(System.Net.HttpStatusCode.BadRequest, new { message = "Logout failed" });
         }
     }
 }

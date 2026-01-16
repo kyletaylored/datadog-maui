@@ -140,5 +140,5 @@ choco install visualstudio2022buildtools --params "--add Microsoft.VisualStudio.
 
 - [IIS Deployment Guide](../docs/IIS_DEPLOYMENT.md)
 - [.NET Comparison Guide](../docs/DOTNET_COMPARISON.md)
-- [Framework Quick Start](../FRAMEWORK_QUICKSTART.md)
+- [Framework Quick Start](../docs/FRAMEWORK_QUICKSTART.md)
 - [Windows Server Testing Guide](../docs/WINDOWS_SERVER_TESTING.md)

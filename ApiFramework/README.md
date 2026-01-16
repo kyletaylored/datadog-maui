@@ -70,9 +70,30 @@ msbuild DatadogMauiApi.Framework.csproj /p:Configuration=Release
 
 ## Configuration
 
-### Web.config Settings
+### Datadog RUM (Web Dashboard)
 
-Edit `Web.config` to configure Datadog:
+RUM configuration is automatically generated from the root `.env` file during build:
+
+1. Edit `.env` in the project root:
+   ```bash
+   DD_RUM_WEB_CLIENT_TOKEN=pub37e71f97f5364780bccc640fd9bcf94a
+   DD_RUM_WEB_APPLICATION_ID=6af6b082-8fc8-4bba-a5e1-587342360624
+   DD_SITE=datadoghq.com
+   DD_ENV=local
+   ```
+
+2. Build the project in Visual Studio - `rum-config.js` is generated automatically
+3. The dashboard at `http://localhost:50000` will use these credentials
+
+**How it works:**
+- MSBuild pre-build event (line 126-129 in `.csproj`) runs `generate-rum-config.ps1`
+- PowerShell script reads `../.env` and generates `rum-config.js`
+- `index.html` loads this config file for RUM initialization
+- Config file is gitignored (regenerated on each build)
+
+### Web.config Settings (APM)
+
+Edit `Web.config` to configure Datadog backend tracing:
 
 ```xml
 <appSettings>

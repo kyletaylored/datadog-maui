@@ -44,13 +44,13 @@ New-Website -Name "DatadogMauiFramework" `
 
 ## Configuration
 
-Edit `Web.config`:
-```xml
-<appSettings>
-  <add key="DD_API_KEY" value="your-api-key" />
-  <add key="DD_ENV" value="production" />
-</appSettings>
-```
+### Datadog RUM & APM
+
+Configuration is split between:
+- **RUM (Web Dashboard)**: Auto-generated from `.env` during build
+- **APM (Backend Tracing)**: Configured in `Web.config`
+
+See [ApiFramework/README.md](ApiFramework/README.md#configuration) for full details.
 
 ## Testing
 

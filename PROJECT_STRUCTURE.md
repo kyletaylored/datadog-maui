@@ -162,7 +162,7 @@ az webapp create --runtime "DOTNETFRAMEWORK|4.8"
 - [.NET Framework README](ApiFramework/README.md)
 - [Detailed Comparison](docs/DOTNET_COMPARISON.md)
 - [Azure Deployment](docs/AZURE_DEPLOYMENT.md)
-- [Quick Start Guides](FRAMEWORK_QUICKSTART.md)
+- [Quick Start Guides](docs/FRAMEWORK_QUICKSTART.md)
 
 ## Mobile App
 

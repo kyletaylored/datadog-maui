@@ -56,7 +56,7 @@ Complete documentation for the Datadog MAUI Application organized by developer c
 ### Getting Started
 1. [Main README](../README.md) - Project overview and quick start
 2. [Quickstart Guide](../QUICKSTART.md) - .NET Core API quick start
-3. [Framework Quick Start](../FRAMEWORK_QUICKSTART.md) - .NET Framework API quick start
+3. [Framework Quick Start](FRAMEWORK_QUICKSTART.md) - .NET Framework API quick start
 
 ### Common Tasks
 

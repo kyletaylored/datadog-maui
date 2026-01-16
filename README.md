@@ -41,7 +41,7 @@ This project includes both .NET Core and .NET Framework versions of the same API
 - **Hosting**: IIS, IIS Express
 - **Architecture**: Web API Controllers pattern
 - **Location**: [ApiFramework/](ApiFramework/)
-- **Quick Start**: [Framework Quick Start](FRAMEWORK_QUICKSTART.md)
+- **Quick Start**: [Framework Quick Start](docs/FRAMEWORK_QUICKSTART.md)
 - **Documentation**: [IIS Deployment Guide](docs/IIS_DEPLOYMENT.md)
 
 **See**: [.NET Comparison Guide](docs/DOTNET_COMPARISON.md) for detailed side-by-side comparison.
@@ -88,7 +88,7 @@ curl http://localhost:5000/health
 
 ### Run the .NET Framework API
 
-See [Framework Quick Start](FRAMEWORK_QUICKSTART.md) for IIS Express setup.
+See [Framework Quick Start](docs/FRAMEWORK_QUICKSTART.md) for IIS Express setup.
 
 ### Run the Mobile App
 
@@ -126,7 +126,7 @@ All endpoints available in both .NET Core and .NET Framework APIs:
 
 ### Quick References
 - [Quickstart Guide](QUICKSTART.md) - .NET Core API
-- [Framework Quick Start](FRAMEWORK_QUICKSTART.md) - .NET Framework API
+- [Framework Quick Start](docs/FRAMEWORK_QUICKSTART.md) - .NET Framework API
 - [Documentation Index](docs/README.md) - Complete documentation
 
 ### Platform Guides

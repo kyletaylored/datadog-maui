@@ -80,6 +80,7 @@
     <Content Include="Web.config" />
     <Content Include="index.html" />
     <Content Include="wwwroot\index.html" />
+    <!-- rum-config.js is generated during build and copied by custom target -->
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\WebApiConfig.cs" />
@@ -122,6 +123,14 @@
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
   <Target Name="MvcBuildViews" AfterTargets="AfterBuild" Condition="'$(MvcBuildViews)'=='true'">
     <AspNetCompiler VirtualPath="temp" PhysicalPath="$(WebProjectOutputDir)" />
+  </Target>
+  <Target Name="GenerateRumConfig" BeforeTargets="Build">
+    <!-- Generate RUM config from .env file before build -->
+    <Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(ProjectDir)generate-rum-config.ps1&quot;" />
+  </Target>
+  <Target Name="CopyRumConfig" AfterTargets="Build">
+    <!-- Copy generated rum-config.js to output directory -->
+    <Copy SourceFiles="$(ProjectDir)rum-config.js" DestinationFolder="$(OutputPath)" Condition="Exists('$(ProjectDir)rum-config.js')" />
   </Target>
   <ProjectExtensions>
     <VisualStudio>

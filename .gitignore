@@ -324,6 +324,7 @@ BenchmarkDotNet.Artifacts/
 # Datadog RUM config files (generated at build time)
 MauiApp/Platforms/Android/datadog-rum.config
 MauiApp/Platforms/iOS/datadog-rum.config
+ApiFramework/rum-config.js
 
 # dSYM archives
 MauiApp/dsyms-*.zip

@@ -52,170 +52,200 @@ namespace DatadogMauiApi.Framework.Services
 
         public LoginResponse AuthenticateUser(string username, string password)
         {
-            using (var scope = Tracer.Instance.StartActive("auth.login"))
+            // Add tags to the active auto-instrumented span instead of creating a new one
+            var activeScope = Tracer.Instance.ActiveScope;
+            if (activeScope != null)
             {
-                scope.Span.ResourceName = "SessionManager.AuthenticateUser";
-                scope.Span.SetTag("service.name", "datadog-maui-api-framework");
-                scope.Span.SetTag("auth.username", username);
-                scope.Span.SetTag("auth.method", "password");
-                scope.Span.SetTag("service.operation", "user_login");
+                activeScope.Span.SetTag("auth.username", username);
+                activeScope.Span.SetTag("auth.method", "password");
+                activeScope.Span.SetTag("service.operation", "user_login");
+            }
 
-                // Simple password check (in production, use proper password hashing)
-                if (!_users.ContainsKey(username) || password != "password")
+            // Simple password check (in production, use proper password hashing)
+            if (!_users.ContainsKey(username) || password != "password")
+            {
+                if (activeScope != null)
                 {
-                    scope.Span.SetTag("auth.success", "false");
-                    scope.Span.SetTag("auth.failure_reason", "invalid_credentials");
-
-                    return new LoginResponse
-                    {
-                        Success = false,
-                        Token = null,
-                        Username = null,
-                        UserId = null,
-                        Message = "Invalid username or password"
-                    };
+                    activeScope.Span.SetTag("auth.success", "false");
+                    activeScope.Span.SetTag("auth.failure_reason", "invalid_credentials");
                 }
-
-                var user = _users[username];
-                var token = GenerateToken(user.UserId);
-
-                // Store session
-                _sessions.TryAdd(token, Tuple.Create(user.UserId, DateTime.UtcNow.AddHours(24)));
-
-                // Update last login
-                user.LastLoginAt = DateTime.UtcNow;
-                _users[username] = user;
-
-                scope.Span.SetTag("auth.success", "true");
-                scope.Span.SetTag("user.id", user.UserId);
-                scope.Span.SetTag("user.username", username);
-                scope.Span.SetTag("user.email", user.Email);
 
                 return new LoginResponse
                 {
-                    Success = true,
-                    Token = token,
-                    Username = user.Username,
-                    UserId = user.UserId,
-                    Message = "Login successful"
+                    Success = false,
+                    Token = null,
+                    Username = null,
+                    UserId = null,
+                    Message = "Invalid username or password"
                 };
             }
+
+            var user = _users[username];
+            var token = GenerateToken(user.UserId);
+
+            // Store session
+            _sessions.TryAdd(token, Tuple.Create(user.UserId, DateTime.UtcNow.AddHours(24)));
+
+            // Update last login
+            user.LastLoginAt = DateTime.UtcNow;
+            _users[username] = user;
+
+            if (activeScope != null)
+            {
+                activeScope.Span.SetTag("auth.success", "true");
+                activeScope.Span.SetTag("user.id", user.UserId);
+                activeScope.Span.SetTag("user.username", username);
+                activeScope.Span.SetTag("user.email", user.Email);
+            }
+
+            return new LoginResponse
+            {
+                Success = true,
+                Token = token,
+                Username = user.Username,
+                UserId = user.UserId,
+                Message = "Login successful"
+            };
         }
 
         public Tuple<bool, string> ValidateSession(string token)
         {
-            using (var scope = Tracer.Instance.StartActive("auth.validate_session"))
+            // Add tags to the active auto-instrumented span instead of creating a new one
+            var activeScope = Tracer.Instance.ActiveScope;
+            if (activeScope != null)
             {
-                scope.Span.ResourceName = "SessionManager.ValidateSession";
-                scope.Span.SetTag("service.name", "datadog-maui-api-framework");
-                scope.Span.SetTag("auth.token_length", token?.Length ?? 0);
-
-                if (string.IsNullOrEmpty(token) || !_sessions.ContainsKey(token))
-                {
-                    scope.Span.SetTag("session.valid", "false");
-                    scope.Span.SetTag("session.failure_reason", "token_not_found");
-                    return Tuple.Create(false, (string)null);
-                }
-
-                var session = _sessions[token];
-                var userId = session.Item1;
-                var expiresAt = session.Item2;
-
-                if (DateTime.UtcNow > expiresAt)
-                {
-                    _sessions.TryRemove(token, out _);
-                    scope.Span.SetTag("session.valid", "false");
-                    scope.Span.SetTag("session.failure_reason", "token_expired");
-                    scope.Span.SetTag("user.id", userId);
-                    return Tuple.Create(false, (string)null);
-                }
-
-                scope.Span.SetTag("session.valid", "true");
-                scope.Span.SetTag("user.id", userId);
-                return Tuple.Create(true, userId);
+                activeScope.Span.SetTag("auth.token_length", token?.Length ?? 0);
             }
+
+            if (string.IsNullOrEmpty(token) || !_sessions.ContainsKey(token))
+            {
+                if (activeScope != null)
+                {
+                    activeScope.Span.SetTag("session.valid", "false");
+                    activeScope.Span.SetTag("session.failure_reason", "token_not_found");
+                }
+                return Tuple.Create(false, (string)null);
+            }
+
+            var session = _sessions[token];
+            var userId = session.Item1;
+            var expiresAt = session.Item2;
+
+            if (DateTime.UtcNow > expiresAt)
+            {
+                _sessions.TryRemove(token, out _);
+                if (activeScope != null)
+                {
+                    activeScope.Span.SetTag("session.valid", "false");
+                    activeScope.Span.SetTag("session.failure_reason", "token_expired");
+                    activeScope.Span.SetTag("user.id", userId);
+                }
+                return Tuple.Create(false, (string)null);
+            }
+
+            if (activeScope != null)
+            {
+                activeScope.Span.SetTag("session.valid", "true");
+                activeScope.Span.SetTag("user.id", userId);
+            }
+            return Tuple.Create(true, userId);
         }
 
         public UserProfile GetUserProfile(string userId)
         {
-            using (var scope = Tracer.Instance.StartActive("user.get_profile"))
+            // Add tags to the active auto-instrumented span instead of creating a new one
+            var activeScope = Tracer.Instance.ActiveScope;
+            if (activeScope != null)
             {
-                scope.Span.ResourceName = "SessionManager.GetUserProfile";
-                scope.Span.SetTag("service.name", "datadog-maui-api-framework");
-                scope.Span.SetTag("user.id", userId);
-                scope.Span.SetTag("operation.type", "profile_fetch");
-
-                var user = _users.Values.FirstOrDefault(u => u.UserId == userId);
-
-                if (user == null)
-                {
-                    scope.Span.SetTag("profile.found", "false");
-                    return null;
-                }
-
-                scope.Span.SetTag("profile.found", "true");
-                scope.Span.SetTag("user.username", user.Username);
-                scope.Span.SetTag("user.email", user.Email);
-
-                return user;
+                activeScope.Span.SetTag("user.id", userId);
+                activeScope.Span.SetTag("operation.type", "profile_fetch");
             }
+
+            var user = _users.Values.FirstOrDefault(u => u.UserId == userId);
+
+            if (user == null)
+            {
+                if (activeScope != null)
+                {
+                    activeScope.Span.SetTag("profile.found", "false");
+                }
+                return null;
+            }
+
+            if (activeScope != null)
+            {
+                activeScope.Span.SetTag("profile.found", "true");
+                activeScope.Span.SetTag("user.username", user.Username);
+                activeScope.Span.SetTag("user.email", user.Email);
+            }
+
+            return user;
         }
 
         public bool UpdateUserProfile(string userId, string fullName, string email)
         {
-            using (var scope = Tracer.Instance.StartActive("user.update_profile"))
+            // Add tags to the active auto-instrumented span instead of creating a new one
+            var activeScope = Tracer.Instance.ActiveScope;
+            if (activeScope != null)
             {
-                scope.Span.ResourceName = "SessionManager.UpdateUserProfile";
-                scope.Span.SetTag("service.name", "datadog-maui-api-framework");
-                scope.Span.SetTag("user.id", userId);
-                scope.Span.SetTag("operation.type", "profile_update");
-                scope.Span.SetTag("update.fields", "fullName,email");
-
-                var user = _users.Values.FirstOrDefault(u => u.UserId == userId);
-
-                if (user == null)
-                {
-                    scope.Span.SetTag("update.success", "false");
-                    scope.Span.SetTag("update.failure_reason", "user_not_found");
-                    return false;
-                }
-
-                // Update the user profile
-                user.FullName = fullName;
-                user.Email = email;
-                _users[user.Username] = user;
-
-                scope.Span.SetTag("update.success", "true");
-                scope.Span.SetTag("user.username", user.Username);
-                scope.Span.SetTag("user.email", email);
-
-                return true;
+                activeScope.Span.SetTag("user.id", userId);
+                activeScope.Span.SetTag("operation.type", "profile_update");
+                activeScope.Span.SetTag("update.fields", "fullName,email");
             }
+
+            var user = _users.Values.FirstOrDefault(u => u.UserId == userId);
+
+            if (user == null)
+            {
+                if (activeScope != null)
+                {
+                    activeScope.Span.SetTag("update.success", "false");
+                    activeScope.Span.SetTag("update.failure_reason", "user_not_found");
+                }
+                return false;
+            }
+
+            // Update the user profile
+            user.FullName = fullName;
+            user.Email = email;
+            _users[user.Username] = user;
+
+            if (activeScope != null)
+            {
+                activeScope.Span.SetTag("update.success", "true");
+                activeScope.Span.SetTag("user.username", user.Username);
+                activeScope.Span.SetTag("user.email", email);
+            }
+
+            return true;
         }
 
         public bool Logout(string token)
         {
-            using (var scope = Tracer.Instance.StartActive("auth.logout"))
+            // Add tags to the active auto-instrumented span instead of creating a new one
+            var activeScope = Tracer.Instance.ActiveScope;
+
+            if (string.IsNullOrEmpty(token) || !_sessions.ContainsKey(token))
             {
-                scope.Span.ResourceName = "SessionManager.Logout";
-                scope.Span.SetTag("service.name", "datadog-maui-api-framework");
-
-                if (string.IsNullOrEmpty(token) || !_sessions.ContainsKey(token))
+                if (activeScope != null)
                 {
-                    scope.Span.SetTag("logout.success", "false");
-                    scope.Span.SetTag("logout.failure_reason", "invalid_token");
-                    return false;
+                    activeScope.Span.SetTag("logout.success", "false");
+                    activeScope.Span.SetTag("logout.failure_reason", "invalid_token");
                 }
-
-                var session = _sessions[token];
-                var userId = session.Item1;
-                _sessions.TryRemove(token, out _);
-
-                scope.Span.SetTag("logout.success", "true");
-                scope.Span.SetTag("user.id", userId);
-
-                return true;
+                return false;
             }
+
+            var session = _sessions[token];
+            var userId = session.Item1;
+            _sessions.TryRemove(token, out _);
+
+            if (activeScope != null)
+            {
+                activeScope.Span.SetTag("logout.success", "true");
+                activeScope.Span.SetTag("user.id", userId);
+            }
+
+            return true;
         }
 
         private static string GenerateToken(string userId)

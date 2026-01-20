@@ -126,6 +126,7 @@
   <ItemGroup>
     <Content Include="Global.asax" />
     <None Include="packages.config" />
+    <None Include="Properties\launchSettings.json" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>

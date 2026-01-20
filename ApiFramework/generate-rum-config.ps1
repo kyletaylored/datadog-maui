@@ -8,8 +8,11 @@ $rootDir = Split-Path -Parent $PSScriptRoot
 $envFile = Join-Path $rootDir ".env"
 $outputFile = Join-Path $PSScriptRoot "rum-config.js"
 
-Write-Host "Reading environment from: $envFile"
+Write-Host "Script directory: $PSScriptRoot"
+Write-Host "Root directory: $rootDir"
+Write-Host "Looking for .env at: $envFile"
 Write-Host "Output file: $outputFile"
+Write-Host ""
 
 # Check if .env file exists
 if (-not (Test-Path $envFile)) {

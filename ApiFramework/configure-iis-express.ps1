@@ -39,11 +39,18 @@ if ($null -eq $envVarsSection) {
     $systemWebServer.AppendChild($envVarsSection) | Out-Null
 }
 
-# Add Datadog environment variables
+# Add Datadog environment variables for both .NET Framework and .NET Core
 $ddVars = @{
+    # .NET Framework variables
     "COR_ENABLE_PROFILING" = "1"
     "COR_PROFILER" = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
     "COR_PROFILER_PATH" = "C:\Program Files\Datadog\.NET Tracer\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
+    # .NET Core variables
+    "CORECLR_ENABLE_PROFILING" = "1"
+    "CORECLR_PROFILER" = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+    "CORECLR_PROFILER_PATH_64" = "C:\Program Files\Datadog\.NET Tracer\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
+    "CORECLR_PROFILER_PATH_32" = "C:\Program Files\Datadog\.NET Tracer\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
+    # Common
     "DD_DOTNET_TRACER_HOME" = "C:\Program Files\Datadog\.NET Tracer"
 }
 

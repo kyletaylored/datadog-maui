@@ -110,30 +110,28 @@ Edit `Web.config` to configure Datadog backend tracing:
 
 **IIS Express (Visual Studio):**
 
-The `.csproj` includes documentation for the required environment variables (lines 26-30), but Visual Studio doesn't automatically propagate PropertyGroup values to IIS Express processes.
+IIS Express requires environment variables to enable Datadog profiling. See [IIS_EXPRESS_DATADOG_SETUP.md](IIS_EXPRESS_DATADOG_SETUP.md) for detailed explanation.
 
-**Option A - Install Datadog .NET Tracer MSI (Recommended):**
-1. Download from https://github.com/DataDog/dd-trace-dotnet/releases/latest
-2. Run `datadog-dotnet-apm-{version}-x64.msi`
-3. Installer configures environment variables globally
-4. IIS Express automatically picks them up
+**Quick Setup:**
 
-**Option B - Launch Visual Studio with Environment Variables:**
-```powershell
-# Use the provided batch file
-.\launch-vs-with-datadog.bat
-```
+1. **Install Datadog .NET Tracer MSI** (if not already installed):
+   - Download from https://github.com/DataDog/dd-trace-dotnet/releases/latest
+   - Run `datadog-dotnet-apm-{version}-x64.msi`
 
-**Option C - Configure IIS Express Manually:**
-```powershell
-# Run PowerShell script to update applicationHost.config
-.\configure-iis-express.ps1
-```
+2. **Configure IIS Express:**
+   ```powershell
+   .\configure-iis-express.ps1
+   ```
 
-After configuration, verify with:
-```powershell
-dd-trace check iis "DatadogMauiFramework"
-```
+3. **Close and reopen Visual Studio**
+
+4. **Verify configuration:**
+   ```powershell
+   # After running the app (F5), get the process ID and check:
+   dd-trace check process <process-id>
+   ```
+
+**Manual configuration:** See [IIS_EXPRESS_DATADOG_SETUP.md](IIS_EXPRESS_DATADOG_SETUP.md#method-2-manual-configuration) for step-by-step XML editing.
 
 **Full IIS (Production):**
 

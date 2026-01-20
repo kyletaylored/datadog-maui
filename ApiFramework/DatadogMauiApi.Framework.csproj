@@ -146,13 +146,13 @@
   <Target Name="MvcBuildViews" AfterTargets="AfterBuild" Condition="'$(MvcBuildViews)'=='true'">
     <AspNetCompiler VirtualPath="temp" PhysicalPath="$(WebProjectOutputDir)" />
   </Target>
-  <Target Name="GenerateRumConfig" BeforeTargets="Build">
+  <Target Name="GenerateRumConfig" BeforeTargets="BeforeBuild">
     <!-- Generate RUM config from .env file before build -->
     <Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(ProjectDir)generate-rum-config.ps1&quot;" />
-  </Target>
-  <Target Name="CopyRumConfig" AfterTargets="Build">
-    <!-- Copy generated rum-config.js to output directory -->
-    <Copy SourceFiles="$(ProjectDir)rum-config.js" DestinationFolder="$(OutputPath)" Condition="Exists('$(ProjectDir)rum-config.js')" />
+    <!-- Include the generated file as Content so it's deployed with the app -->
+    <ItemGroup>
+      <Content Include="$(ProjectDir)rum-config.js" Condition="Exists('$(ProjectDir)rum-config.js')" />
+    </ItemGroup>
   </Target>
   <ProjectExtensions>
     <VisualStudio>

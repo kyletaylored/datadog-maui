@@ -2,6 +2,16 @@
 
 This guide explains how to enable Datadog APM instrumentation for IIS Express (used by Visual Studio for local development).
 
+## ⚠️ Known Issue: COR_ENABLE_PROFILING
+
+Even after running the configuration script, `COR_ENABLE_PROFILING` may not be picked up by the IIS Express process. This is a known limitation of how IIS Express loads environment variables from applicationHost.config.
+
+**The updated script (v2) now sets variables in TWO locations:**
+1. **Application Pool Defaults** (`<applicationPoolDefaults>`) - Primary location
+2. **system.webServer** - Fallback global location
+
+If this still doesn't work, use **Method 3: System Environment Variable** below (last resort).
+
 ## Why IIS Express Needs Configuration
 
 IIS Express is a separate process launched by Visual Studio. For Datadog automatic instrumentation to work, the IIS Express process needs specific environment variables set before it starts. These environment variables tell the .NET runtime to load the Datadog profiler.
@@ -105,18 +115,31 @@ If you prefer to manually edit the config:
 
 6. **Reopen Visual Studio and run the project**
 
-### Method 3: Global Environment Variables (Not Recommended for Dev)
+### Method 3: System Environment Variable (Last Resort)
 
-You can set these as system-wide environment variables, but this affects ALL .NET processes on your machine:
+If the automated script and manual config still don't set `COR_ENABLE_PROFILING`, set it as a system environment variable. This affects ALL .NET processes on your machine but is sometimes the only way to make IIS Express pick it up:
 
 ```powershell
-# Run as Administrator
+# Run PowerShell as Administrator
 [System.Environment]::SetEnvironmentVariable("COR_ENABLE_PROFILING", "1", "Machine")
 [System.Environment]::SetEnvironmentVariable("COR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}", "Machine")
-# ... etc
+[System.Environment]::SetEnvironmentVariable("COR_PROFILER_PATH_32", "C:\Program Files\Datadog\.NET Tracer\win-x86\Datadog.Trace.ClrProfiler.Native.dll", "Machine")
+[System.Environment]::SetEnvironmentVariable("COR_PROFILER_PATH_64", "C:\Program Files\Datadog\.NET Tracer\win-x64\Datadog.Trace.ClrProfiler.Native.dll", "Machine")
+[System.Environment]::SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", "C:\Program Files\Datadog\.NET Tracer", "Machine")
 ```
 
-**Warning:** This instruments every .NET app on your computer, which can cause performance overhead and unexpected behavior.
+**After setting:**
+- Restart Visual Studio completely
+- Restart your computer (recommended)
+- Run the project
+
+**Warning:** This instruments every .NET Framework app on your computer, which can cause performance overhead. To remove:
+```powershell
+# Run as Administrator
+[System.Environment]::SetEnvironmentVariable("COR_ENABLE_PROFILING", $null, "Machine")
+[System.Environment]::SetEnvironmentVariable("COR_PROFILER", $null, "Machine")
+# ... etc
+```
 
 ## Verification
 

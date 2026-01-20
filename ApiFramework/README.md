@@ -106,18 +106,43 @@ Edit `Web.config` to configure Datadog backend tracing:
 </appSettings>
 ```
 
-### Datadog HTTP Module
+### Datadog Automatic Instrumentation
 
-The `Web.config` includes the Datadog HTTP Module for automatic instrumentation:
+**IIS Express (Visual Studio):**
 
+The project is configured with CLR profiler environment variables in the `.csproj` file (lines 26-30):
 ```xml
-<system.webServer>
-  <modules>
-    <add name="DatadogHttpModule"
-         type="Datadog.Trace.AspNet.TracingHttpModule, Datadog.Trace.AspNet" />
-  </modules>
-</system.webServer>
+<COR_ENABLE_PROFILING>1</COR_ENABLE_PROFILING>
+<COR_PROFILER>{846F5F1C-F9AE-4B07-969E-05C26BC060D8}</COR_PROFILER>
+<COR_PROFILER_PATH>C:\Program Files\Datadog\.NET Tracer\win-x64\Datadog.Trace.ClrProfiler.Native.dll</COR_PROFILER_PATH>
+<DD_DOTNET_TRACER_HOME>C:\Program Files\Datadog\.NET Tracer</DD_DOTNET_TRACER_HOME>
 ```
+
+This enables automatic instrumentation when running from Visual Studio (F5). **Requires Datadog .NET Tracer to be installed.**
+
+**Full IIS (Production):**
+
+For production IIS, set environment variables on the Application Pool:
+```powershell
+# In IIS Manager → Application Pools → [YourAppPool] → Advanced Settings → Environment Variables
+COR_ENABLE_PROFILING=1
+COR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
+```
+
+Or use the Datadog MSI installer which configures IIS globally.
+
+### OWIN vs Global.asax Pipeline
+
+This project supports **both** traditional ASP.NET pipeline (Global.asax) and OWIN middleware pipeline for testing different customer environments.
+
+**Default**: Uses Global.asax (traditional ASP.NET pipeline)
+
+**To enable OWIN mode** (for replicating OWIN-based customer issues):
+1. Add `USE_OWIN` to **Project Properties → Build → Conditional compilation symbols**
+2. Rebuild the project
+3. OWIN middleware pipeline will handle requests instead
+
+See [OWIN_SETUP.md](OWIN_SETUP.md) for detailed configuration and troubleshooting.
 
 ## Endpoints
 

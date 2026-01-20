@@ -67,7 +67,8 @@ foreach ($key in $ddVars.Keys) {
 $config.Save($configPath)
 
 Write-Host ""
-Write-Host "✓ IIS Express configured for Datadog profiling!" -ForegroundColor Green
+Write-Host ""
+Write-Host "IIS Express configured for Datadog profiling!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Next steps:"
 Write-Host "1. Close Visual Studio completely"
@@ -75,4 +76,4 @@ Write-Host "2. Reopen Visual Studio"
 Write-Host "3. Run the project (F5)"
 Write-Host "4. Datadog APM should now work in IIS Express"
 Write-Host ""
-Write-Host "To restore original config, use: $backupPath"
+Write-Host "To restore original config, use: ${backupPath}"

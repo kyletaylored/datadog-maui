@@ -110,31 +110,27 @@ Edit `Web.config` to configure Datadog backend tracing:
 
 **IIS Express (Visual Studio):**
 
-Environment variables for Datadog profiling are pre-configured in `Properties/launchSettings.json`. No additional setup needed!
-
 **Quick Setup:**
 
 1. **Install Datadog .NET Tracer MSI** (if not already installed):
    - Download from https://github.com/DataDog/dd-trace-dotnet/releases/latest
    - Run `datadog-dotnet-apm-{version}-x64.msi`
 
-2. **Run the project (F5)** - Datadog APM will be automatically enabled!
+2. **Select "IIS Express (Datadog)" launch profile** in Visual Studio
 
-The launchSettings.json file sets all required environment variables:
-- `COR_ENABLE_PROFILING=1`
-- `COR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}`
-- `COR_PROFILER_PATH_32/64` (paths to Datadog profiler DLLs)
-- `DD_DOTNET_TRACER_HOME`
-
-For troubleshooting, see [../docs/backend/IIS_EXPRESS_DATADOG_SETUP.md](../docs/backend/IIS_EXPRESS_DATADOG_SETUP.md)
+3. **Press F5 to run** - Datadog APM will work automatically!
 
 4. **Verify configuration:**
    ```powershell
    # After running the app (F5), get the process ID and check:
-   dd-trace check process <process-id>
+   dd-dotnet check process <process-id>
    ```
 
-**Manual configuration:** See [../docs/backend/IIS_EXPRESS_DATADOG_SETUP.md](../docs/backend/IIS_EXPRESS_DATADOG_SETUP.md#method-2-manual-configuration) for step-by-step XML editing.
+**How it works:** The "IIS Express (Datadog)" profile uses `commandName: Executable` to launch iisexpress.exe directly with environment variables. This works around a Visual Studio bug where `commandName: IISExpress` ignores environment variables for .NET Framework projects.
+
+**Alternative:** If you prefer not to use the custom profile, run `.\enable-datadog-profiling.ps1` (as Administrator) to set `COR_ENABLE_PROFILING=1` globally.
+
+For troubleshooting, see [../docs/backend/IIS_EXPRESS_DATADOG_SETUP.md](../docs/backend/IIS_EXPRESS_DATADOG_SETUP.md)
 
 **Full IIS (Production):**
 

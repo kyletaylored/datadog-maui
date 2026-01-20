@@ -70,6 +70,7 @@ Complete documentation for the Datadog MAUI Application organized by developer c
 - [Compare .NET implementations](backend/DOTNET_COMPARISON.md)
 - [Deploy to IIS](backend/IIS_DEPLOYMENT.md)
 - [Troubleshoot IIS](backend/IIS_TROUBLESHOOTING.md)
+- [Configure IIS Express with Datadog](backend/IIS_EXPRESS_DATADOG_SETUP.md)
 
 **Deployment:**
 - [Deploy to Azure](deployment/AZURE.md)

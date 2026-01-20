@@ -110,7 +110,7 @@ Edit `Web.config` to configure Datadog backend tracing:
 
 **IIS Express (Visual Studio):**
 
-IIS Express requires environment variables to enable Datadog profiling. See [IIS_EXPRESS_DATADOG_SETUP.md](IIS_EXPRESS_DATADOG_SETUP.md) for detailed explanation.
+IIS Express requires environment variables to enable Datadog profiling. See [../docs/backend/IIS_EXPRESS_DATADOG_SETUP.md](../docs/backend/IIS_EXPRESS_DATADOG_SETUP.md) for detailed explanation.
 
 **Quick Setup:**
 
@@ -131,7 +131,7 @@ IIS Express requires environment variables to enable Datadog profiling. See [IIS
    dd-trace check process <process-id>
    ```
 
-**Manual configuration:** See [IIS_EXPRESS_DATADOG_SETUP.md](IIS_EXPRESS_DATADOG_SETUP.md#method-2-manual-configuration) for step-by-step XML editing.
+**Manual configuration:** See [../docs/backend/IIS_EXPRESS_DATADOG_SETUP.md](../docs/backend/IIS_EXPRESS_DATADOG_SETUP.md#method-2-manual-configuration) for step-by-step XML editing.
 
 **Full IIS (Production):**
 

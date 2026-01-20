@@ -8,10 +8,11 @@ Backend API documentation for both .NET Core and .NET Framework implementations.
 
 ## .NET Framework 4.8 API
 
-Windows-specific deployment guides:
+Windows-specific deployment and development guides:
 
 - [IIS Deployment](IIS_DEPLOYMENT.md) - Complete guide for deploying to IIS
 - [IIS Troubleshooting](IIS_TROUBLESHOOTING.md) - Common IIS issues and solutions
+- [IIS Express Datadog Setup](IIS_EXPRESS_DATADOG_SETUP.md) - Configure Datadog APM for IIS Express (Visual Studio)
 - [Windows Server Testing](WINDOWS_SERVER_TESTING.md) - Testing on Windows Server environments
 
 ## Related Documentation

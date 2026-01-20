@@ -2,6 +2,7 @@ using System.Web.Http;
 using Microsoft.Owin;
 using Owin;
 using System.Web.Http.Cors;
+using Microsoft.Owin.Extensions;
 
 [assembly: OwinStartup(typeof(DatadogMauiApi.Framework.Startup))]
 

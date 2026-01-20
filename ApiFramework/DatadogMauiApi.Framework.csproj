@@ -161,7 +161,7 @@
           <UseIIS>True</UseIIS>
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>50000</DevelopmentServerPort>
-          <DevelopmentServerVHost>/</DevelopmentServerVHost>
+          <DevelopmentServerVHost>localhost</DevelopmentServerVHost>
           <IISUrl>http://localhost:50000/</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>

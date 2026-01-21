@@ -1,6 +1,5 @@
 using System.Web.Http.Controllers;
 using System.Web.Http.Filters;
-using System.Web.Http.Routing;
 using Datadog.Trace;
 
 namespace DatadogMauiApi.Framework.Filters
@@ -22,10 +21,14 @@ namespace DatadogMauiApi.Framework.Filters
                 actionContext.Request.Properties["datadog.span"] = span;
 
                 // Optionally set default resource name based on route
-                var routeTemplate = actionContext.Request.GetRouteData()?.Route?.RouteTemplate;
-                if (!string.IsNullOrEmpty(routeTemplate))
+                var routeData = actionContext.RequestContext?.RouteData;
+                if (routeData?.Route != null)
                 {
-                    span.SetTag("http.route", routeTemplate);
+                    var routeTemplate = routeData.Route.RouteTemplate;
+                    if (!string.IsNullOrEmpty(routeTemplate))
+                    {
+                        span.SetTag("http.route", routeTemplate);
+                    }
                 }
             }
 

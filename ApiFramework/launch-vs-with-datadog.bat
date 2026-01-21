@@ -20,6 +20,7 @@ SET DD_DOTNET_TRACER_HOME=C:\Program Files\Datadog\.NET Tracer
 SET DD_SERVICE=datadog-maui-api-framework
 SET DD_ENV=local
 SET DD_VERSION=1.0.0
+SET DD_TRACE_DEBUG=true
 
 echo [OK] Environment variables set
 echo.

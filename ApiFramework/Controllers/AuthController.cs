@@ -23,11 +23,18 @@ namespace DatadogMauiApi.Framework.Controllers
             // Get the active Datadog span (works in both Global.asax and OWIN modes)
             var span = GetDatadogSpan();
 
+            System.Diagnostics.Debug.WriteLine($"[AuthController.Login] GetDatadogSpan returned: {span != null}");
             if (span != null)
             {
+                System.Diagnostics.Debug.WriteLine($"[AuthController.Login] Span OperationName: {span.OperationName}, ResourceName: {span.ResourceName}");
                 span.ResourceName = "POST /auth/login";
                 span.SetTag("custom.operation.type", "user_login");
                 span.SetTag("custom.pipeline", "owin"); // Tag to identify OWIN mode
+                System.Diagnostics.Debug.WriteLine($"[AuthController.Login] Set custom tags on span");
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[AuthController.Login] WARNING: Span is null, cannot set custom tags!");
             }
 
             if (request == null || string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))

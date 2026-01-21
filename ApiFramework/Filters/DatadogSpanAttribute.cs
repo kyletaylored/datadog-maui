@@ -15,10 +15,14 @@ namespace DatadogMauiApi.Framework.Filters
             // Get the Datadog span once at the start of the request
             var span = GetDatadogSpan(actionContext);
 
+            System.Diagnostics.Debug.WriteLine($"[DatadogSpanAttribute] Filter executing for {actionContext.Request.Method} {actionContext.Request.RequestUri?.PathAndQuery}");
+            System.Diagnostics.Debug.WriteLine($"[DatadogSpanAttribute] Span found: {span != null}, OperationName: {span?.OperationName}");
+
             if (span != null)
             {
                 // Store it in request properties so controllers can easily access it
                 actionContext.Request.Properties["datadog.span"] = span;
+                System.Diagnostics.Debug.WriteLine($"[DatadogSpanAttribute] Cached span in request properties");
 
                 // Optionally set default resource name based on route
                 var routeData = actionContext.RequestContext?.RouteData;
@@ -28,8 +32,13 @@ namespace DatadogMauiApi.Framework.Filters
                     if (!string.IsNullOrEmpty(routeTemplate))
                     {
                         span.SetTag("http.route", routeTemplate);
+                        System.Diagnostics.Debug.WriteLine($"[DatadogSpanAttribute] Set http.route tag: {routeTemplate}");
                     }
                 }
+            }
+            else
+            {
+                System.Diagnostics.Debug.WriteLine($"[DatadogSpanAttribute] WARNING: No span found!");
             }
 
             base.OnActionExecuting(actionContext);

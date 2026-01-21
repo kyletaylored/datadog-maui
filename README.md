@@ -133,6 +133,7 @@ All endpoints available in both .NET Core and .NET Framework APIs:
 - **iOS**: [Build Configuration](docs/mobile/ios/BUILD_CONFIGURATION.md) | [Crash Reporting](docs/mobile/ios/CRASH_REPORTING.md)
 - **Deployment**: [IIS Guide](docs/backend/IIS_DEPLOYMENT.md) | [Azure Guide](docs/deployment/AZURE.md)
 - **Comparison**: [.NET Core vs Framework](docs/backend/DOTNET_COMPARISON.md)
+- **APM Patterns**: [Datadog APM Instrumentation](docs/backend/DATADOG_PATTERNS.md) - OWIN span handling, controller migration
 
 ### Configuration & Setup
 - [Datadog Agent Setup](docs/datadog/DATADOG_AGENT_SETUP.md)

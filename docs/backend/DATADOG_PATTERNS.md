@@ -2,6 +2,33 @@
 
 This document explains the scalable patterns used for Datadog APM instrumentation in the ApiFramework project.
 
+## Table of Contents
+
+- [Architecture Overview](#architecture-overview)
+- [Scalability Features](#scalability-features)
+  - [Span Caching with Action Filter](#1-span-caching-with-action-filter)
+  - [Base Controller Pattern](#2-base-controller-pattern)
+  - [Controller Usage](#3-controller-usage)
+- [Performance Characteristics](#performance-characteristics)
+- [Scaling to Many Controllers](#scaling-to-many-controllers)
+- [Pipeline Mode Support](#pipeline-mode-support)
+- [Migration Guide: Adapting Existing Controllers](#migration-guide-adapting-existing-controllers)
+  - [Why Migration is Needed for OWIN](#why-migration-is-needed-for-owin)
+  - [Step-by-Step Migration](#step-by-step-migration)
+  - [Migration Checklist](#migration-checklist)
+  - [Testing the Migration](#testing-the-migration)
+  - [Common Migration Issues](#common-migration-issues)
+- [Custom Span Attributes Best Practices](#custom-span-attributes-best-practices)
+- [Switching Between Global.asax and OWIN](#switching-between-globalasax-and-owin)
+  - [How to Switch to OWIN Mode](#how-to-switch-to-owin-mode)
+  - [How to Switch to Global.asax Mode](#how-to-switch-to-globalasax-mode)
+  - [What Changes Between Modes](#what-changes-between-modes)
+  - [Testing Both Modes](#testing-both-modes)
+- [Troubleshooting](#troubleshooting)
+- [Summary](#summary)
+
+---
+
 ## Architecture Overview
 
 The implementation supports **both** Global.asax and OWIN pipeline modes with minimal code duplication.
@@ -460,17 +487,84 @@ Don't log:
 - SSNs
 - Other sensitive data
 
-## Testing Both Pipeline Modes
+## Switching Between Global.asax and OWIN
 
-### Switch to OWIN Mode
-1. Add `USE_OWIN` to **Project Properties → Build → Conditional compilation symbols**
-2. Rebuild
+The ApiFramework project supports both Global.asax (traditional ASP.NET) and OWIN pipeline modes. You can switch between them using conditional compilation.
 
-### Switch to Global.asax Mode
-1. Remove `USE_OWIN` from compilation symbols
-2. Rebuild
+### How to Switch to OWIN Mode
 
-Controllers work the same in both modes!
+1. **Add Compilation Symbol:**
+   - Open **Project Properties** (right-click project → Properties)
+   - Go to **Build** tab
+   - Add `USE_OWIN` to **Conditional compilation symbols**
+   - Example: `DEBUG;TRACE;USE_OWIN`
+
+2. **Rebuild the project:**
+   ```bash
+   # In Visual Studio: Build → Rebuild Solution
+   # Or via MSBuild:
+   msbuild DatadogMauiApi.Framework.csproj /p:DefineConstants="USE_OWIN" /t:Rebuild
+   ```
+
+3. **Verify OWIN is active:**
+   - Check debug output for: `[Datadog OWIN] Captured span`
+   - Check span operation name: should be `aspnet.request` (not `aspnet.web_request`)
+
+### How to Switch to Global.asax Mode
+
+1. **Remove Compilation Symbol:**
+   - Open **Project Properties**
+   - Go to **Build** tab
+   - Remove `USE_OWIN` from **Conditional compilation symbols**
+   - Example: `DEBUG;TRACE`
+
+2. **Rebuild the project:**
+   ```bash
+   # In Visual Studio: Build → Rebuild Solution
+   # Or via MSBuild:
+   msbuild DatadogMauiApi.Framework.csproj /t:Rebuild
+   ```
+
+3. **Verify Global.asax is active:**
+   - Check span operation name: should be `aspnet.web_request` (not `aspnet.request`)
+   - OWIN middleware debug messages should not appear
+
+### What Changes Between Modes
+
+| Aspect | Global.asax Mode | OWIN Mode |
+|--------|-----------------|-----------|
+| **Startup** | `Global.asax.cs` Application_Start | `Startup.cs` Configuration method |
+| **Span Type** | `aspnet.web_request` | `aspnet.request` (parent) + `aspnet-webapi.request` (child) |
+| **Span Access** | `Tracer.Instance.ActiveScope` returns correct span | Middleware captures parent span in OWIN context |
+| **Custom Tags** | Work directly on active span | Must be set on parent span (captured by middleware) |
+| **Controller Code** | **No changes needed** | **No changes needed** |
+
+### Important Notes
+
+- **Controller code remains identical** - the `GetDatadogSpan()` helper works in both modes
+- **Filter registration** - ensure `DatadogSpanAttribute` is registered in both `WebApiConfig.cs` AND `Startup.cs`
+- **OWIN middleware** - only runs when `USE_OWIN` is defined, captures parent span
+- **Debug output** - look for `[Datadog OWIN]` messages to confirm OWIN mode is active
+
+### Testing Both Modes
+
+It's recommended to test your application in both pipeline modes:
+
+1. **Test in OWIN mode:**
+   ```bash
+   # Add USE_OWIN, rebuild, run, verify custom tags in Datadog UI
+   ```
+
+2. **Test in Global.asax mode:**
+   ```bash
+   # Remove USE_OWIN, rebuild, run, verify custom tags in Datadog UI
+   ```
+
+3. **Verify consistency:**
+   - Custom tags should appear in both modes
+   - Resource names should be set correctly
+   - No compilation errors or warnings
+   - Same controller code works in both modes
 
 ## Troubleshooting
 

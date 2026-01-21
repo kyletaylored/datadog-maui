@@ -1,5 +1,6 @@
 using System.Web.Http.Controllers;
 using System.Web.Http.Filters;
+using System.Web.Http.Routing;
 using Datadog.Trace;
 
 namespace DatadogMauiApi.Framework.Filters

@@ -7,6 +7,9 @@ namespace DatadogMauiApi.Framework
     {
         public static void Register(HttpConfiguration config)
         {
+            // Register Datadog span filter globally (runs on every request)
+            config.Filters.Add(new Filters.DatadogSpanAttribute());
+
             // Enable CORS for all origins (configure as needed for production)
             var cors = new EnableCorsAttribute("*", "*", "*");
             config.EnableCors(cors);

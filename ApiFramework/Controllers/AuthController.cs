@@ -7,7 +7,7 @@ using DatadogMauiApi.Framework.Services;
 namespace DatadogMauiApi.Framework.Controllers
 {
     [RoutePrefix("auth")]
-    public class AuthController : ApiController
+    public class AuthController : DatadogApiController
     {
         private readonly SessionManager _sessionManager;
 
@@ -20,12 +20,14 @@ namespace DatadogMauiApi.Framework.Controllers
         [Route("login")]
         public IHttpActionResult Login([FromBody] LoginRequest request)
         {
-            // Get the active span created by automatic instrumentation
-            var activeScope = Tracer.Instance.ActiveScope;
-            if (activeScope != null)
+            // Get the active Datadog span (works in both Global.asax and OWIN modes)
+            var span = GetDatadogSpan();
+
+            if (span != null)
             {
-                activeScope.Span.ResourceName = "POST /auth/login";
-                activeScope.Span.SetTag("custom.operation.type", "user_login");
+                span.ResourceName = "POST /auth/login";
+                span.SetTag("custom.operation.type", "user_login");
+                span.SetTag("custom.pipeline", "owin"); // Tag to identify OWIN mode
             }
 
             if (request == null || string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))
@@ -33,26 +35,26 @@ namespace DatadogMauiApi.Framework.Controllers
                 return BadRequest("Username and password are required");
             }
 
-            if (activeScope != null)
+            if (span != null)
             {
-                activeScope.Span.SetTag("custom.auth.username", request.Username);
+                span.SetTag("custom.auth.username", request.Username);
             }
 
             var response = _sessionManager.AuthenticateUser(request.Username, request.Password);
 
             if (response.Success)
             {
-                if (activeScope != null)
+                if (span != null)
                 {
-                    activeScope.Span.SetTag("custom.auth.success", "true");
-                    activeScope.Span.SetTag("custom.user.id", response.UserId);
+                    span.SetTag("custom.auth.success", "true");
+                    span.SetTag("custom.user.id", response.UserId);
                 }
                 return Ok(response);
             }
 
-            if (activeScope != null)
+            if (span != null)
             {
-                activeScope.Span.SetTag("custom.auth.success", "false");
+                span.SetTag("custom.auth.success", "false");
             }
             return Unauthorized();
         }
@@ -61,20 +63,22 @@ namespace DatadogMauiApi.Framework.Controllers
         [Route("logout")]
         public IHttpActionResult Logout()
         {
-            // Get the active span created by automatic instrumentation
-            var activeScope = Tracer.Instance.ActiveScope;
-            if (activeScope != null)
+            // Get the active Datadog span (works in both Global.asax and OWIN modes)
+            var span = GetDatadogSpan();
+
+            if (span != null)
             {
-                activeScope.Span.ResourceName = "POST /auth/logout";
-                activeScope.Span.SetTag("custom.operation.type", "user_logout");
+                span.ResourceName = "POST /auth/logout";
+                span.SetTag("custom.operation.type", "user_logout");
+                span.SetTag("custom.pipeline", "owin");
             }
 
             var authHeader = Request.Headers.Authorization;
             if (authHeader == null || string.IsNullOrEmpty(authHeader.Parameter))
             {
-                if (activeScope != null)
+                if (span != null)
                 {
-                    activeScope.Span.SetTag("custom.auth.present", "false");
+                    span.SetTag("custom.auth.present", "false");
                 }
                 return Content(System.Net.HttpStatusCode.BadRequest, new { message = "No token provided" });
             }
@@ -83,16 +87,16 @@ namespace DatadogMauiApi.Framework.Controllers
 
             if (success)
             {
-                if (activeScope != null)
+                if (span != null)
                 {
-                    activeScope.Span.SetTag("custom.logout.success", "true");
+                    span.SetTag("custom.logout.success", "true");
                 }
                 return Ok(new { message = "Logged out successfully" });
             }
 
-            if (activeScope != null)
+            if (span != null)
             {
-                activeScope.Span.SetTag("custom.logout.success", "false");
+                span.SetTag("custom.logout.success", "false");
             }
             return Content(System.Net.HttpStatusCode.BadRequest, new { message = "Logout failed" });
         }

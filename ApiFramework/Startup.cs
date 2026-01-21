@@ -29,6 +29,9 @@ namespace DatadogMauiApi.Framework
             // Create Web API configuration
             var config = new HttpConfiguration();
 
+            // Register Datadog span filter globally (runs on every request)
+            config.Filters.Add(new Filters.DatadogSpanAttribute());
+
             // Enable CORS (same as Global.asax config)
             var cors = new EnableCorsAttribute("*", "*", "*");
             config.EnableCors(cors);
@@ -51,6 +54,39 @@ namespace DatadogMauiApi.Framework
 
             // Remove XML formatter
             config.Formatters.Remove(config.Formatters.XmlFormatter);
+
+            // Add Datadog span enrichment middleware - must run BEFORE UseWebApi
+            // This ensures we capture the root aspnet.request span created by Datadog
+            app.Use(async (context, next) =>
+            {
+                // Get the active Datadog span (should be aspnet.request)
+                var scope = Datadog.Trace.Tracer.Instance.ActiveScope;
+
+                if (scope != null)
+                {
+                    // Store the span in the OWIN context so controllers can access it
+                    context.Environment["datadog.span"] = scope.Span;
+
+                    // Add request metadata to the root span
+                    scope.Span.SetTag("http.method", context.Request.Method);
+                    scope.Span.SetTag("http.url", context.Request.Uri.ToString());
+                    scope.Span.SetTag("http.path", context.Request.Path.Value);
+
+                    System.Diagnostics.Debug.WriteLine($"[Datadog OWIN] Captured span: {scope.Span.OperationName}");
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("[Datadog OWIN] WARNING: No active span found");
+                }
+
+                await next();
+
+                // Add response status after processing
+                if (scope != null)
+                {
+                    scope.Span.SetTag("http.status_code", context.Response.StatusCode.ToString());
+                }
+            });
 
             // Add custom OWIN middleware for logging/debugging
             app.Use(async (context, next) =>

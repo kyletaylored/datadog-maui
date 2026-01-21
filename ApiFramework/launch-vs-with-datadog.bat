@@ -30,16 +30,16 @@ echo Any IIS Express processes launched from VS will also inherit them.
 echo.
 
 REM Launch Visual Studio with the solution file
-START "" "%ProgramFiles%\Microsoft Visual Studio\2026\Community\Common7\IDE\devenv.exe" "%~dp0DatadogMauiApi.Framework.sln"
+START "" "%ProgramFiles%\Microsoft Visual Studio\18\Community\Common7\IDE\devenv.exe" "%~dp0DatadogMauiApi.Framework.sln"
 
 REM If VS 2026 Community not found, try Professional
 IF ERRORLEVEL 1 (
-    START "" "%ProgramFiles%\Microsoft Visual Studio\2026\Professional\Common7\IDE\devenv.exe" "%~dp0DatadogMauiApi.Framework.sln"
+    START "" "%ProgramFiles%\Microsoft Visual Studio\18\Professional\Common7\IDE\devenv.exe" "%~dp0DatadogMauiApi.Framework.sln"
 )
 
 REM If VS 2026 not found, try VS 2022
 IF ERRORLEVEL 1 (
-    START "" "%ProgramFiles%\Microsoft Visual Studio\2022\Community\Common7\IDE\devenv.exe" "%~dp0DatadogMauiApi.Framework.sln"
+    START "" "%ProgramFiles%\Microsoft Visual Studio\18\Community\Common7\IDE\devenv.exe" "%~dp0DatadogMauiApi.Framework.sln"
 )
 
 echo.

@@ -2,13 +2,13 @@
 
 This guide explains how to enable Datadog APM instrumentation for IIS Express (used by Visual Studio for local development).
 
-## ✅ Recommended Approach: Custom Launch Profile
+## ✅ Recommended Approach: Launch Script
 
-The **ApiFramework** project includes a special launch profile that works around a Visual Studio bug where `commandName: IISExpress` doesn't apply environment variables to the IIS Express process.
+The **ApiFramework** project includes a batch file that launches Visual Studio with Datadog environment variables pre-configured.
 
-**The Bug:** When using `"commandName": "IISExpress"` in launchSettings.json, environment variables are ignored for .NET Framework projects. ([GitHub Issue](https://github.com/CZEMacLeod/MSBuild.SDK.SystemWeb/issues/65))
+**The Challenge:** .NET Framework projects with IIS Express don't reliably pick up environment variables from `launchSettings.json` or `.csproj.user` files due to how Visual Studio spawns the IIS Express process.
 
-**The Workaround:** Use `"commandName": "Executable"` to launch iisexpress.exe directly, which properly applies environment variables.
+**The Solution:** Launch Visual Studio itself with environment variables already set. When VS launches IIS Express, it inherits those variables.
 
 ### Quick Start
 
@@ -19,16 +19,20 @@ The **ApiFramework** project includes a special launch profile that works around
    # Run the installer: datadog-dotnet-apm-{version}-x64.msi
    ```
 
-   The MSI sets these system variables automatically:
-   - `COR_PROFILER`
-   - `COR_PROFILER_PATH_32` / `COR_PROFILER_PATH_64`
-   - `DD_DOTNET_TRACER_HOME`
+   The MSI installs the tracer to:
+   - `C:\Program Files\Datadog\.NET Tracer\`
 
-2. **Select the correct launch profile:**
-   - In Visual Studio, find the launch profile dropdown (next to the Run button)
-   - Select **"IIS Express (Datadog)"**
+2. **Launch Visual Studio with the batch file:**
+   ```powershell
+   .\ApiFramework\launch-vs-with-datadog.bat
+   ```
 
-3. **Press F5 to run** - Datadog APM will now work!
+   The script will:
+   - Auto-detect your Visual Studio installation (any version: 2019, 2022, 2026, etc.)
+   - Set all required Datadog environment variables
+   - Launch Visual Studio with the solution
+
+3. **Press F5 to debug** - Datadog APM will work automatically!
 
 4. **Verify it's working:**
    ```powershell
@@ -45,56 +49,44 @@ The **ApiFramework** project includes a special launch profile that works around
 
 ### How It Works
 
-The `Properties/launchSettings.json` file includes this profile:
+The batch file (`launch-vs-with-datadog.bat`) does three things:
 
-```json
-"IIS Express (Datadog)": {
-  "commandName": "Executable",
-  "executablePath": "C:\\Program Files\\IIS Express\\iisexpress.exe",
-  "commandLineArgs": "/config:$(SolutionDir)\\.vs\\DatadogMauiApi.Framework\\config\\applicationhost.config /site:DatadogMauiApi.Framework",
-  "launchBrowser": true,
-  "environmentVariables": {
-    "COR_ENABLE_PROFILING": "1",
-    "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-    // ... all Datadog variables
-  }
-}
-```
+1. **Uses `vswhere.exe`** to automatically locate your Visual Studio installation (works with any version/edition)
+2. **Sets environment variables** in the batch session:
+   - `COR_ENABLE_PROFILING=1`
+   - `COR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}`
+   - Profiler DLL paths for 32-bit and 64-bit
+   - Datadog service tags (DD_SERVICE, DD_ENV, DD_VERSION)
+3. **Launches Visual Studio** which inherits these variables, and subsequently IIS Express inherits them too
 
-This directly executes iisexpress.exe with environment variables, bypassing Visual Studio's broken IISExpress launch mechanism.
-
-## Why This Works
-
-IIS Express is a separate process launched by Visual Studio. For Datadog automatic instrumentation to work, the IIS Express process needs specific environment variables set before it starts.
-
-Visual Studio reads `Properties/launchSettings.json` when you press F5 and automatically sets those environment variables for the IIS Express process.
+This approach is simple, version-agnostic, and doesn't require any project file modifications or extensions.
 
 ## Required Environment Variables
 
-The launchSettings.json file includes these variables:
+The batch file sets these variables:
 
 ### .NET Framework Applications
-```json
-"COR_ENABLE_PROFILING": "1",
-"COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-"COR_PROFILER_PATH_32": "C:\\Program Files\\Datadog\\.NET Tracer\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll",
-"COR_PROFILER_PATH_64": "C:\\Program Files\\Datadog\\.NET Tracer\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll"
+```
+COR_ENABLE_PROFILING=1
+COR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
+COR_PROFILER_PATH_32=C:\Program Files\Datadog\.NET Tracer\win-x86\Datadog.Trace.ClrProfiler.Native.dll
+COR_PROFILER_PATH_64=C:\Program Files\Datadog\.NET Tracer\win-x64\Datadog.Trace.ClrProfiler.Native.dll
 ```
 
 ### .NET Core Applications (for compatibility)
-```json
-"CORECLR_ENABLE_PROFILING": "1",
-"CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-"CORECLR_PROFILER_PATH_32": "C:\\Program Files\\Datadog\\.NET Tracer\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll",
-"CORECLR_PROFILER_PATH_64": "C:\\Program Files\\Datadog\\.NET Tracer\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll"
+```
+CORECLR_ENABLE_PROFILING=1
+CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
+CORECLR_PROFILER_PATH_32=C:\Program Files\Datadog\.NET Tracer\win-x86\Datadog.Trace.ClrProfiler.Native.dll
+CORECLR_PROFILER_PATH_64=C:\Program Files\Datadog\.NET Tracer\win-x64\Datadog.Trace.ClrProfiler.Native.dll
 ```
 
 ### Common
-```json
-"DD_DOTNET_TRACER_HOME": "C:\\Program Files\\Datadog\\.NET Tracer",
-"DD_SERVICE": "datadog-maui-api-framework",
-"DD_ENV": "local",
-"DD_VERSION": "1.0.0"
+```
+DD_DOTNET_TRACER_HOME=C:\Program Files\Datadog\.NET Tracer
+DD_SERVICE=datadog-maui-api-framework
+DD_ENV=local
+DD_VERSION=1.0.0
 ```
 
 ## What Each Variable Does
@@ -113,43 +105,40 @@ The launchSettings.json file includes these variables:
 | `DD_ENV` | Environment name (local, dev, staging, prod) |
 | `DD_VERSION` | Application version for tracking deployments |
 
-## Customizing launchSettings.json
+## Customizing the Batch File
 
-You can customize the environment variables in `ApiFramework/Properties/launchSettings.json`:
+You can edit `ApiFramework/launch-vs-with-datadog.bat` to customize:
 
-```json
-{
-  "iisSettings": {
-    "iisExpress": {
-      "applicationUrl": "http://localhost:50000",
-      "sslPort": 44300
-    }
-  },
-  "profiles": {
-    "IIS Express": {
-      "commandName": "IISExpress",
-      "launchBrowser": true,
-      "environmentVariables": {
-        // Add or modify variables here
-        "DD_ENV": "dev",
-        "DD_TRACE_DEBUG": "true"  // Enable debug logging
-      }
-    }
-  }
-}
+- **Service name**: Change `DD_SERVICE` value
+- **Environment**: Change `DD_ENV` value (local, dev, etc.)
+- **Version**: Change `DD_VERSION` value
+
+Example:
+```batch
+SET DD_SERVICE=my-custom-service
+SET DD_ENV=dev
+SET DD_VERSION=2.0.0
 ```
 
 ## Troubleshooting
+
+### vswhere.exe Not Found
+
+**Problem:** Script can't find `vswhere.exe`
+
+**Solution:** Install Visual Studio 2019 or later. `vswhere.exe` is included with all modern VS versions at:
+```
+C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe
+```
 
 ### Variables Not Set After Running
 
 **Problem:** `dd-dotnet check` shows variables are not set
 
 **Solutions:**
-1. Verify you're running the "IIS Express" profile (check dropdown in Visual Studio)
-2. Make sure launchSettings.json exists at `ApiFramework/Properties/launchSettings.json`
-3. Close Visual Studio completely and reopen
-4. Check that the Datadog .NET Tracer MSI is installed
+1. Make sure you launched VS using the batch file (not by double-clicking the .sln)
+2. Close all Visual Studio instances and run the batch file again
+3. Check that the Datadog .NET Tracer MSI is installed
 
 ### Wrong Paths
 
@@ -167,10 +156,15 @@ https://github.com/DataDog/dd-trace-dotnet/releases/latest
 
 **Problem:** Connection refused or IIS Express crashes
 
-**Solution:** Check for syntax errors in launchSettings.json:
-- Make sure all JSON is valid
-- Paths must use double backslashes: `C:\\Program Files\\...`
-- All strings must be properly quoted
+**Solution:**
+1. Check for port conflicts (default is 50000)
+2. Review IIS Express logs in `%USERPROFILE%\Documents\IISExpress\Logs`
+3. Try resetting IIS Express configuration:
+   ```powershell
+   # Delete IIS Express config
+   Remove-Item "$env:USERPROFILE\Documents\IISExpress\config" -Recurse -Force
+   # Restart Visual Studio
+   ```
 
 ### Tracer Loaded But No Traces
 
@@ -182,43 +176,23 @@ https://github.com/DataDog/dd-trace-dotnet/releases/latest
 3. Review application logs for Datadog errors
 4. Ensure endpoints are actually being hit (make test requests)
 
-## Alternative: Global Environment Variables
+## Why Not Use launchSettings.json or .csproj.user?
 
-If launchSettings.json doesn't work for your setup (rare), you can set system-wide environment variables. This affects ALL .NET processes on your machine:
+We tried several approaches:
 
-```powershell
-# Run PowerShell as Administrator
-[System.Environment]::SetEnvironmentVariable("COR_ENABLE_PROFILING", "1", "Machine")
-[System.Environment]::SetEnvironmentVariable("COR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}", "Machine")
-[System.Environment]::SetEnvironmentVariable("COR_PROFILER_PATH_32", "C:\Program Files\Datadog\.NET Tracer\win-x86\Datadog.Trace.ClrProfiler.Native.dll", "Machine")
-[System.Environment]::SetEnvironmentVariable("COR_PROFILER_PATH_64", "C:\Program Files\Datadog\.NET Tracer\win-x64\Datadog.Trace.ClrProfiler.Native.dll", "Machine")
-[System.Environment]::SetEnvironmentVariable("DD_DOTNET_TRACER_HOME", "C:\Program Files\Datadog\.NET Tracer", "Machine")
-```
+1. **`launchSettings.json`**: Doesn't work for .NET Framework projects - Visual Studio ignores environment variables when using `commandName: IISExpress`
+2. **`.csproj.user` EnvironmentVariables property**: Not reliably applied to IIS Express process for .NET Framework projects
+3. **Global system environment variables**: Works but affects ALL .NET apps on the machine (not project-specific)
 
-**After setting:**
-- Restart your computer
-- Run the project
-
-**Warning:** This instruments every .NET Framework app on your computer. To remove:
-```powershell
-# Run as Administrator
-[System.Environment]::SetEnvironmentVariable("COR_ENABLE_PROFILING", $null, "Machine")
-[System.Environment]::SetEnvironmentVariable("COR_PROFILER", $null, "Machine")
-# ... etc
-```
-
-## Benefits of launchSettings.json Approach
-
-✅ **No scripts to run** - Configuration is automatic
-✅ **Version controlled** - Can commit to git for team consistency
-✅ **Standard approach** - How Visual Studio is designed to work
-✅ **Per-project** - Doesn't affect other applications
-✅ **Easy to customize** - Just edit JSON file
-✅ **Works immediately** - No need to restart Visual Studio
-✅ **Team-friendly** - Everyone gets the same configuration
+The batch file approach is:
+- ✅ Project-specific (doesn't affect other apps)
+- ✅ Version-controlled (can be committed to git)
+- ✅ Simple and maintainable
+- ✅ Works across all VS versions automatically
+- ✅ No installation or extensions required
 
 ## Additional Resources
 
 - [Datadog .NET Tracer Documentation](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework/)
 - [Datadog .NET Tracer GitHub Releases](https://github.com/DataDog/dd-trace-dotnet/releases)
-- [Visual Studio launchSettings.json Reference](https://docs.microsoft.com/en-us/aspnet/core/fundamentals/environments)
+- [vswhere Documentation](https://github.com/microsoft/vswhere)

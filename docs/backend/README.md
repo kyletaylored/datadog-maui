@@ -26,21 +26,17 @@ RUM credentials are automatically loaded from `.env` during build:
 - **No manual configuration needed!**
 
 ### APM Tracing (IIS Express)
-Environment variables for Datadog APM are configured via the `.csproj.user` file (gitignored).
+Launch Visual Studio with Datadog environment variables using the provided batch file.
 
 **Quick Setup:**
 1. Install [Datadog .NET Tracer MSI](https://github.com/DataDog/dd-trace-dotnet/releases)
-2. Run the setup script (as Administrator):
+2. Launch Visual Studio with environment:
    ```powershell
-   .\ApiFramework\setup-debug-env.ps1
+   .\ApiFramework\launch-vs-with-datadog.bat
    ```
-3. Open project in Visual Studio and press F5
+3. Press F5 to debug - APM will work automatically
 
-The setup script configures your local `.csproj.user` file with Datadog environment variables. Visual Studio automatically applies these when debugging with IIS Express.
-
-**Alternative approaches:**
-- Use `.\ApiFramework\enable-datadog-profiling.ps1` to set `COR_ENABLE_PROFILING=1` globally
-- Use `.\ApiFramework\launch-vs-with-datadog.bat` to launch VS with environment variables pre-set
+The batch file auto-detects your Visual Studio installation (any version/edition) and launches it with all required Datadog environment variables. IIS Express processes inherit these variables.
 
 See [IIS Express Datadog Setup](IIS_EXPRESS_DATADOG_SETUP.md) for details and troubleshooting.
 

@@ -2,6 +2,10 @@
 REM Launch Visual Studio with Datadog environment variables pre-set
 REM This ensures IIS Express inherits the environment variables
 
+echo ========================================
+echo Datadog Visual Studio Launcher
+echo ========================================
+echo.
 echo Setting Datadog environment variables for this session...
 
 SET COR_ENABLE_PROFILING=1
@@ -17,32 +21,68 @@ SET DD_SERVICE=datadog-maui-api-framework
 SET DD_ENV=local
 SET DD_VERSION=1.0.0
 
-echo.
-echo Environment variables set for this session:
-echo   COR_ENABLE_PROFILING=%COR_ENABLE_PROFILING%
-echo   DD_SERVICE=%DD_SERVICE%
-echo   DD_ENV=%DD_ENV%
+echo [OK] Environment variables set
 echo.
 
-echo Launching Visual Studio...
+REM Use vswhere.exe to find Visual Studio installation
+echo Locating Visual Studio installation...
+SET "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+
+IF NOT EXIST "%VSWHERE%" (
+    echo ERROR: vswhere.exe not found at: %VSWHERE%
+    echo Please install Visual Studio 2019 or later
+    echo.
+    pause
+    exit /b 1
+)
+
+REM Find the latest Visual Studio installation
+FOR /F "usebackq tokens=*" %%i IN (`"%VSWHERE%" -latest -property installationPath`) DO (
+    SET "VS_PATH=%%i"
+)
+
+IF "%VS_PATH%"=="" (
+    echo ERROR: No Visual Studio installation found
+    echo.
+    pause
+    exit /b 1
+)
+
+SET "DEVENV=%VS_PATH%\Common7\IDE\devenv.exe"
+
+IF NOT EXIST "%DEVENV%" (
+    echo ERROR: devenv.exe not found at: %DEVENV%
+    echo.
+    pause
+    exit /b 1
+)
+
+echo [OK] Found Visual Studio at: %VS_PATH%
+echo.
+
+echo Launching Visual Studio with Datadog environment...
+echo Solution: %~dp0DatadogMauiApi.Framework.sln
+echo.
 echo Visual Studio will inherit these environment variables.
 echo Any IIS Express processes launched from VS will also inherit them.
 echo.
 
 REM Launch Visual Studio with the solution file
-START "" "%ProgramFiles%\Microsoft Visual Studio\18\Community\Common7\IDE\devenv.exe" "%~dp0DatadogMauiApi.Framework.sln"
+START "" "%DEVENV%" "%~dp0DatadogMauiApi.Framework.sln"
 
-REM If VS 2026 Community not found, try Professional
 IF ERRORLEVEL 1 (
-    START "" "%ProgramFiles%\Microsoft Visual Studio\18\Professional\Common7\IDE\devenv.exe" "%~dp0DatadogMauiApi.Framework.sln"
-)
-
-REM If VS 2026 not found, try VS 2022
-IF ERRORLEVEL 1 (
-    START "" "%ProgramFiles%\Microsoft Visual Studio\18\Community\Common7\IDE\devenv.exe" "%~dp0DatadogMauiApi.Framework.sln"
+    echo ERROR: Failed to launch Visual Studio
+    echo.
+    pause
+    exit /b 1
 )
 
 echo.
-echo Visual Studio launched with Datadog environment variables!
+echo [OK] Visual Studio launched successfully!
+echo.
+echo Next steps:
+echo 1. Press F5 in Visual Studio to start debugging
+echo 2. Get the IIS Express process ID from Task Manager
+echo 3. Verify: dd-dotnet check process [PID]
 echo.
 pause

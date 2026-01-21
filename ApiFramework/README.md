@@ -116,13 +116,13 @@ Edit `Web.config` to configure Datadog backend tracing:
    - Download from https://github.com/DataDog/dd-trace-dotnet/releases/latest
    - Run `datadog-dotnet-apm-{version}-x64.msi`
 
-2. **Run the setup script** (as Administrator):
+2. **Launch Visual Studio with Datadog environment:**
    ```powershell
-   .\ApiFramework\setup-debug-env.ps1
+   .\ApiFramework\launch-vs-with-datadog.bat
    ```
-   This configures your local `.csproj.user` file with Datadog environment variables.
+   This automatically detects your Visual Studio installation and launches it with all Datadog environment variables pre-configured.
 
-3. **Press F5 to run** - Datadog APM will work automatically!
+3. **Press F5 to debug** - Datadog APM will work automatically!
 
 4. **Verify configuration:**
    ```powershell
@@ -130,11 +130,9 @@ Edit `Web.config` to configure Datadog backend tracing:
    dd-dotnet check process <process-id>
    ```
 
-**How it works:** The setup script adds environment variables to your `.csproj.user` file (which is gitignored). Visual Studio automatically applies these when launching IIS Express for debugging. This is the standard way to configure debug environment variables for .NET Framework projects.
+**How it works:** The batch file uses `vswhere.exe` to auto-detect your Visual Studio installation (works with VS 2019, 2022, 2026, any edition), sets Datadog environment variables, and launches Visual Studio. Any IIS Express process launched from VS inherits these variables.
 
-**Alternative approaches:**
-- Run `.\enable-datadog-profiling.ps1` (as Administrator) to set `COR_ENABLE_PROFILING=1` globally
-- Use `.\launch-vs-with-datadog.bat` to launch Visual Studio with environment variables pre-set
+**Note:** Due to limitations in .NET Framework project debugging, environment variables must be set before launching Visual Studio. Always use the batch file instead of opening the solution directly.
 
 For troubleshooting, see [../docs/backend/IIS_EXPRESS_DATADOG_SETUP.md](../docs/backend/IIS_EXPRESS_DATADOG_SETUP.md)
 

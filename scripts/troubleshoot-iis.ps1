@@ -192,20 +192,20 @@ try {
             # Grant to IIS users
             icacls "$currentPath" /grant "IIS_IUSRS:(OI)(CI)RX" /T /Q | Out-Null
             icacls "$currentPath" /grant "IUSR:(OI)(CI)RX" /T /Q | Out-Null
-            icacls "$currentPath" /grant "$appPoolIdentity:(OI)(CI)RX" /T /Q | Out-Null
+            icacls "$currentPath" /grant "${appPoolIdentity}:(OI)(CI)RX" /T /Q | Out-Null
 
             # Grant write to bin and App_Data
             $binPath = Join-Path $currentPath "bin"
             $appDataPath = Join-Path $currentPath "App_Data"
 
             if (Test-Path $binPath) {
-                icacls "$binPath" /grant "$appPoolIdentity:(OI)(CI)M" /T /Q | Out-Null
+                icacls "$binPath" /grant "${appPoolIdentity}:(OI)(CI)M" /T /Q | Out-Null
             }
 
             if (-not (Test-Path $appDataPath)) {
                 New-Item -Path $appDataPath -ItemType Directory -Force | Out-Null
             }
-            icacls "$appDataPath" /grant "$appPoolIdentity:(OI)(CI)M" /T /Q | Out-Null
+            icacls "$appDataPath" /grant "${appPoolIdentity}:(OI)(CI)M" /T /Q | Out-Null
 
             Write-Fix "Permissions updated"
         }

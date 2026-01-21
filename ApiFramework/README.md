@@ -43,7 +43,7 @@ ApiFramework/
 ## Prerequisites
 
 - **Windows OS** (required for .NET Framework)
-- **Visual Studio 2019+** or **Rider**
+- **Visual Studio 2022+** or **Rider**
 - **.NET Framework 4.8 SDK**
 - **IIS Express** or **IIS** for hosting
 
@@ -188,6 +188,14 @@ All endpoints match the .NET Core version:
 5. Set App Pool to your application pool
 6. API will be available at your IIS site URL
 
+**If you encounter permissions errors (500.19):**
+Run the troubleshooting script from the project root:
+```powershell
+.\scripts\troubleshoot-iis.ps1 -FixAll
+```
+
+This will automatically fix common IIS issues including permissions, physical paths, and app pool configuration.
+
 ## Deployment to Azure App Service
 
 ### Using Azure Portal
@@ -304,6 +312,20 @@ config.EnableCors(cors);
 2. Check that HTTP Module is loaded (Event Viewer → Application logs)
 3. Ensure `DD_TRACE_ENABLED=true`
 4. Check Datadog logs in `C:\ProgramData\Datadog .NET Tracer\logs\`
+
+### IIS Permissions or Configuration Issues
+
+Run the comprehensive troubleshooting script:
+```powershell
+.\scripts\troubleshoot-iis.ps1 -FixAll
+```
+
+This will check and fix:
+- Physical path configuration
+- File permissions (IIS_IUSRS, app pool identity)
+- Missing files
+- Application pool state
+- Website state
 
 ## Comparison with .NET Core
 

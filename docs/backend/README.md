@@ -26,14 +26,16 @@ RUM credentials are automatically loaded from `.env` during build:
 - **No manual configuration needed!**
 
 ### APM Tracing (IIS Express)
-Datadog environment variables are pre-configured in `Properties/launchSettings.json`:
-- All required `COR_*` and `CORECLR_*` variables included
-- Automatically applied when you press F5 in Visual Studio
-- **No scripts to run!**
+The project includes a special launch profile that works around an IIS Express bug with environment variables.
 
-**Requirements:**
+**Quick Setup:**
 1. Install [Datadog .NET Tracer MSI](https://github.com/DataDog/dd-trace-dotnet/releases)
-2. Press F5 to run
+2. In Visual Studio, select **"IIS Express (Datadog)"** from the launch profile dropdown
+3. Press F5 to run
+
+The "IIS Express (Datadog)" profile uses `commandName: Executable` to launch iisexpress.exe directly, which properly applies environment variables (unlike the standard `commandName: IISExpress`).
+
+**Alternative:** Use `.\ApiFramework\enable-datadog-profiling.ps1` to set `COR_ENABLE_PROFILING=1` globally.
 
 See [IIS Express Datadog Setup](IIS_EXPRESS_DATADOG_SETUP.md) for details and troubleshooting.
 

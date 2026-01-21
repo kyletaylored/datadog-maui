@@ -2,9 +2,13 @@
 
 This guide explains how to enable Datadog APM instrumentation for IIS Express (used by Visual Studio for local development).
 
-## ✅ Recommended Approach: launchSettings.json
+## ✅ Recommended Approach: Custom Launch Profile
 
-The **ApiFramework** project is already configured with `Properties/launchSettings.json` that sets all required Datadog environment variables. This is the standard Visual Studio approach and requires no additional setup.
+The **ApiFramework** project includes a special launch profile that works around a Visual Studio bug where `commandName: IISExpress` doesn't apply environment variables to the IIS Express process.
+
+**The Bug:** When using `"commandName": "IISExpress"` in launchSettings.json, environment variables are ignored for .NET Framework projects. ([GitHub Issue](https://github.com/CZEMacLeod/MSBuild.SDK.SystemWeb/issues/65))
+
+**The Workaround:** Use `"commandName": "Executable"` to launch iisexpress.exe directly, which properly applies environment variables.
 
 ### Quick Start
 
@@ -15,13 +19,18 @@ The **ApiFramework** project is already configured with `Properties/launchSettin
    # Run the installer: datadog-dotnet-apm-{version}-x64.msi
    ```
 
-2. **Open the project in Visual Studio**
+   The MSI sets these system variables automatically:
+   - `COR_PROFILER`
+   - `COR_PROFILER_PATH_32` / `COR_PROFILER_PATH_64`
+   - `DD_DOTNET_TRACER_HOME`
 
-3. **Select "IIS Express" in the launch profile dropdown** (next to the Run button)
+2. **Select the correct launch profile:**
+   - In Visual Studio, find the launch profile dropdown (next to the Run button)
+   - Select **"IIS Express (Datadog)"**
 
-4. **Press F5 to run** - Datadog APM will be automatically enabled!
+3. **Press F5 to run** - Datadog APM will now work!
 
-5. **Verify it's working:**
+4. **Verify it's working:**
    ```powershell
    # Get the PID from Task Manager (iisexpress.exe)
    dd-dotnet check process <PID>
@@ -33,6 +42,26 @@ The **ApiFramework** project is already configured with `Properties/launchSettin
    [SUCCESS]: The environment variable COR_PROFILER is set to the correct value of {846F5F1C-F9AE-4B07-969E-05C26BC060D8}
    [SUCCESS]: The tracer version X.X.X is loaded into the process
    ```
+
+### How It Works
+
+The `Properties/launchSettings.json` file includes this profile:
+
+```json
+"IIS Express (Datadog)": {
+  "commandName": "Executable",
+  "executablePath": "C:\\Program Files\\IIS Express\\iisexpress.exe",
+  "commandLineArgs": "/config:$(SolutionDir)\\.vs\\DatadogMauiApi.Framework\\config\\applicationhost.config /site:DatadogMauiApi.Framework",
+  "launchBrowser": true,
+  "environmentVariables": {
+    "COR_ENABLE_PROFILING": "1",
+    "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+    // ... all Datadog variables
+  }
+}
+```
+
+This directly executes iisexpress.exe with environment variables, bypassing Visual Studio's broken IISExpress launch mechanism.
 
 ## Why This Works
 

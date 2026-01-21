@@ -347,6 +347,19 @@ This will check and fix:
 - ✅ Built-in dependency injection
 - ✅ Easier Docker deployment
 
+## Datadog APM Patterns
+
+For scalable Datadog APM instrumentation patterns, including OWIN vs Global.asax span handling and controller migration guides, see:
+
+**[Datadog APM Patterns Documentation](../docs/backend/DATADOG_PATTERNS.md)**
+
+This guide covers:
+- Action filter-based span caching for better performance
+- Base controller pattern for consistent span access
+- OWIN vs Global.asax span hierarchy differences
+- Migration guide for adapting existing controllers
+- Why custom tags may not appear in OWIN mode and how to fix it
+
 ## Resources
 
 - [ASP.NET Web API Documentation](https://docs.microsoft.com/en-us/aspnet/web-api/)

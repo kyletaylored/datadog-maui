@@ -14,6 +14,7 @@ Windows-specific deployment and development guides:
 - [IIS Troubleshooting](IIS_TROUBLESHOOTING.md) - Common IIS issues and solutions
 - [IIS Express Datadog Setup](IIS_EXPRESS_DATADOG_SETUP.md) - Configure Datadog APM for IIS Express (Visual Studio)
 - [Windows Server Testing](WINDOWS_SERVER_TESTING.md) - Testing on Windows Server environments
+- [Datadog APM Patterns](DATADOG_PATTERNS.md) - Scalable patterns for APM instrumentation, OWIN span handling, and controller migration
 
 ## Quick Setup
 

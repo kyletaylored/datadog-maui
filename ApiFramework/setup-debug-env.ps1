@@ -32,7 +32,7 @@ if (-not (Test-Path $tracerPath)) {
     exit 1
 }
 
-Write-Host "✓ Datadog .NET Tracer found at: $tracerPath" -ForegroundColor Green
+Write-Host "[OK] Datadog .NET Tracer found at: $tracerPath" -ForegroundColor Green
 
 # Define environment variables (semicolon-separated)
 $envVars = @(
@@ -69,12 +69,12 @@ try {
     if (Test-Path $userFilePath) {
         $backupPath = "$userFilePath.backup"
         Copy-Item $userFilePath $backupPath -Force
-        Write-Host "✓ Backed up existing .csproj.user to: $backupPath" -ForegroundColor Gray
+        Write-Host "[OK] Backed up existing .csproj.user file" -ForegroundColor Gray
     }
 
     # Write new content
     $userFileContent | Out-File -FilePath $userFilePath -Encoding UTF8 -Force
-    Write-Host "✓ Updated .csproj.user with Datadog environment variables" -ForegroundColor Green
+    Write-Host "[OK] Updated .csproj.user with Datadog environment variables" -ForegroundColor Green
 
     Write-Host ""
     Write-Host "========================================" -ForegroundColor Green
@@ -86,7 +86,7 @@ try {
     Write-Host "2. Press F5 to debug with IIS Express" -ForegroundColor White
     Write-Host "3. Verify environment variables are set:" -ForegroundColor White
     Write-Host "   - Get process ID from Task Manager (iisexpress.exe)" -ForegroundColor Gray
-    Write-Host "   - Run: dd-dotnet check process <PID>" -ForegroundColor Gray
+    Write-Host "   - Run: dd-dotnet check process [PID]" -ForegroundColor Gray
     Write-Host ""
     Write-Host "The environment variables will be automatically applied when debugging." -ForegroundColor Cyan
     Write-Host ""

@@ -72,7 +72,11 @@ namespace DatadogMauiApi.Framework
                     scope.Span.SetTag("http.url", context.Request.Uri.ToString());
                     scope.Span.SetTag("http.path", context.Request.Path.Value);
 
-                    System.Diagnostics.Debug.WriteLine($"[Datadog OWIN] Captured span: {scope.Span.OperationName}");
+                    // Add custom tag to identify that this is the parent span
+                    scope.Span.SetTag("custom.span.type", "aspnet.request.parent");
+                    scope.Span.SetTag("custom.pipeline", "owin");
+
+                    System.Diagnostics.Debug.WriteLine($"[Datadog OWIN] Captured span: {scope.Span.OperationName} (SpanId: {scope.Span.SpanId})");
                 }
                 else
                 {
@@ -85,6 +89,13 @@ namespace DatadogMauiApi.Framework
                 if (scope != null)
                 {
                     scope.Span.SetTag("http.status_code", context.Response.StatusCode.ToString());
+
+                    // After processing, check if there's still an active scope (might be the child span)
+                    var currentScope = Datadog.Trace.Tracer.Instance.ActiveScope;
+                    if (currentScope != null && currentScope.Span.SpanId != scope.Span.SpanId)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[Datadog OWIN] Active span changed to: {currentScope.Span.OperationName} (SpanId: {currentScope.Span.SpanId})");
+                    }
                 }
             });
 

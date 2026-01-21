@@ -102,10 +102,12 @@
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\AuthController.cs" />
     <Compile Include="Controllers\DataController.cs" />
+    <Compile Include="Controllers\DatadogApiController.cs" />
     <Compile Include="Controllers\HealthController.cs" />
     <Compile Include="Controllers\ConfigController.cs" />
     <Compile Include="Controllers\ProfileController.cs" />
     <Compile Include="Controllers\RumConfigController.cs" />
+    <Compile Include="Filters\DatadogSpanAttribute.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>

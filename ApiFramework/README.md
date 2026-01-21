@@ -116,7 +116,11 @@ Edit `Web.config` to configure Datadog backend tracing:
    - Download from https://github.com/DataDog/dd-trace-dotnet/releases/latest
    - Run `datadog-dotnet-apm-{version}-x64.msi`
 
-2. **Select "IIS Express (Datadog)" launch profile** in Visual Studio
+2. **Run the setup script** (as Administrator):
+   ```powershell
+   .\ApiFramework\setup-debug-env.ps1
+   ```
+   This configures your local `.csproj.user` file with Datadog environment variables.
 
 3. **Press F5 to run** - Datadog APM will work automatically!
 
@@ -126,9 +130,11 @@ Edit `Web.config` to configure Datadog backend tracing:
    dd-dotnet check process <process-id>
    ```
 
-**How it works:** The "IIS Express (Datadog)" profile uses `commandName: Executable` to launch iisexpress.exe directly with environment variables. This works around a Visual Studio bug where `commandName: IISExpress` ignores environment variables for .NET Framework projects.
+**How it works:** The setup script adds environment variables to your `.csproj.user` file (which is gitignored). Visual Studio automatically applies these when launching IIS Express for debugging. This is the standard way to configure debug environment variables for .NET Framework projects.
 
-**Alternative:** If you prefer not to use the custom profile, run `.\enable-datadog-profiling.ps1` (as Administrator) to set `COR_ENABLE_PROFILING=1` globally.
+**Alternative approaches:**
+- Run `.\enable-datadog-profiling.ps1` (as Administrator) to set `COR_ENABLE_PROFILING=1` globally
+- Use `.\launch-vs-with-datadog.bat` to launch Visual Studio with environment variables pre-set
 
 For troubleshooting, see [../docs/backend/IIS_EXPRESS_DATADOG_SETUP.md](../docs/backend/IIS_EXPRESS_DATADOG_SETUP.md)
 

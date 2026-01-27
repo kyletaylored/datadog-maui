@@ -25,6 +25,39 @@ SET DD_TRACE_DEBUG=true
 echo [OK] Environment variables set
 echo.
 
+REM Verify Datadog .NET Tracer is installed
+echo Verifying Datadog .NET Tracer installation...
+echo.
+
+IF NOT EXIST "%DD_DOTNET_TRACER_HOME%" (
+    echo ERROR: Datadog .NET Tracer not found at: %DD_DOTNET_TRACER_HOME%
+    echo.
+    echo Please install the Datadog .NET Tracer:
+    echo 1. Download from: https://github.com/DataDog/dd-trace-dotnet/releases
+    echo 2. Install the MSI package
+    echo 3. Default install path: C:\Program Files\Datadog\.NET Tracer
+    echo.
+    pause
+    exit /b 1
+)
+
+echo [OK] Found Datadog .NET Tracer at: %DD_DOTNET_TRACER_HOME%
+
+IF NOT EXIST "%COR_PROFILER_PATH_64%" (
+    echo WARNING: 64-bit profiler DLL not found at: %COR_PROFILER_PATH_64%
+    echo This may cause issues if running 64-bit IIS Express
+    echo.
+)
+
+IF NOT EXIST "%COR_PROFILER_PATH_32%" (
+    echo WARNING: 32-bit profiler DLL not found at: %COR_PROFILER_PATH_32%
+    echo This may cause issues if running 32-bit IIS Express
+    echo.
+)
+
+echo [OK] Datadog profiler DLLs verified
+echo.
+
 REM Use vswhere.exe to find Visual Studio installation
 echo Locating Visual Studio installation...
 echo.

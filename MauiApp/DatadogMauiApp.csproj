@@ -65,6 +65,27 @@
         <IosApplicationId Condition="'$(IosApplicationId)' == ''">$(DD_RUM_IOS_APPLICATION_ID)</IosApplicationId>
     </PropertyGroup>
 
+    <!-- Datadog Symbol Upload Configuration -->
+    <PropertyGroup>
+        <!-- Required: Service names for symbol uploads -->
+        <DatadogServiceNameAndroid>com.datadog.mauiapp.android</DatadogServiceNameAndroid>
+        <DatadogServiceNameiOS>com.datadog.mauiapp.ios</DatadogServiceNameiOS>
+
+        <!-- API Key via environment variable (recommended) -->
+        <!-- Set DD_API_KEY environment variable before building -->
+
+        <!-- Optional: Test with dry-run first (set to true to skip actual upload) -->
+        <DatadogDryRun>false</DatadogDryRun>
+    </PropertyGroup>
+
+    <!-- Android R8 Configuration (for ProGuard/R8 mapping file upload) -->
+    <PropertyGroup Condition="'$(Configuration)' == 'Release' AND '$(TargetFramework)' == 'net10.0-android'">
+        <!-- Enable R8 code shrinker (generates mapping files for Datadog) -->
+        <AndroidEnableProguard>true</AndroidEnableProguard>
+        <AndroidLinkTool>r8</AndroidLinkTool>
+        <AndroidLinkMode>Full</AndroidLinkMode>
+    </PropertyGroup>
+
     <!-- Generate Android runtime config file with credentials -->
     <Target Name="GenerateAndroidRumConfig" BeforeTargets="BeforeBuild" Condition="'$(TargetFramework)' == 'net10.0-android'">
         <PropertyGroup>
@@ -128,6 +149,18 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+
+        <!-- Datadog Symbol Upload Package (from local-packages) -->
+        <PackageReference Include="Datadog.MAUI.Symbols" Version="1.0.0" />
+    </ItemGroup>
+
+    <!-- Configure package sources for Datadog packages -->
+    <ItemGroup>
+        <!-- Local package source -->
+        <RestoreAdditionalProjectSources Include="$(MSBuildProjectDirectory)/../local-packages" />
+
+        <!-- Remote static NuGet feed for Datadog MAUI packages -->
+        <RestoreAdditionalProjectSources Include="https://kyletaylored.github.io/dd-sdk-maui/nuget/index.json" />
     </ItemGroup>
 
     <!-- Android-specific resources -->

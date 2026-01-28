@@ -3,6 +3,7 @@
         docker-build docker-start docker-stop docker-restart docker-logs docker-clean \
         datadog-build-android datadog-build-ios datadog-build-all \
         agent-logs logs-all api-build-simple status integration-test docs \
+        app-release-android-dry app-release-ios-dry app-release-android app-release-ios \
         test clean all
 
 # Variables
@@ -32,13 +33,19 @@ help:
 	@echo "Mobile App Commands:"
 	@echo "  make app-clean       Clean app build artifacts"
 	@echo "  make app-restore     Restore NuGet packages"
-	@echo "  make app-build-android   Build Android app"
-	@echo "  make app-build-ios       Build iOS app"
+	@echo "  make app-build-android   Build Android app (Debug)"
+	@echo "  make app-build-ios       Build iOS app (Debug)"
 	@echo "  make app-run-android     Build and run on Android emulator"
 	@echo "  make app-run-ios         Build and run on iOS simulator"
 	@echo "  make app-logs-android    View Android logs (filtered for Datadog)"
 	@echo "  make app-logs-android-all View all Android logs"
 	@echo "  make app-logs-clear      Clear Android logs"
+	@echo ""
+	@echo "Release Build Commands (Symbol Upload):"
+	@echo "  make app-release-android-dry   Build Android Release (dry-run, no upload)"
+	@echo "  make app-release-ios-dry       Build iOS Release (dry-run, no upload)"
+	@echo "  make app-release-android       Build Android Release (with symbol upload)"
+	@echo "  make app-release-ios           Build iOS Release (with symbol upload)"
 	@echo ""
 	@echo "Datadog Commands:"
 	@echo "  make datadog-build-android   Build Datadog Android bindings"
@@ -208,6 +215,82 @@ app-logs-clear:
 	else \
 		echo "❌ adb not found in PATH"; \
 	fi
+
+# =============================================================================
+# Release Build Commands (Symbol Upload Testing)
+# =============================================================================
+
+app-release-android-dry:
+	@echo "🔨 Building Android Release (dry-run mode)..."
+	@echo "   Symbol upload will be simulated (no actual upload)"
+	@echo ""
+	@bash -c 'source ./scripts/set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && dotnet build -c Release -f net10.0-android' 2>&1 | tee /tmp/android-release.log
+	@echo ""
+	@echo "📋 Symbol Upload Summary:"
+	@grep -i "datadog" /tmp/android-release.log | grep -i "symbol\|mapping\|upload\|dry" || echo "   No symbol upload output found"
+	@echo ""
+	@echo "✅ Android Release build complete (dry-run)"
+	@echo "   To test with actual upload, run: make app-release-android"
+
+app-release-ios-dry:
+	@echo "🔨 Building iOS Release (dry-run mode)..."
+	@echo "   Symbol upload will be simulated (no actual upload)"
+	@echo ""
+	@bash -c 'source ./scripts/set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && dotnet build -c Release -f net10.0-ios' 2>&1 | tee /tmp/ios-release.log
+	@echo ""
+	@echo "📋 Symbol Upload Summary:"
+	@grep -i "datadog" /tmp/ios-release.log | grep -i "symbol\|dsym\|upload\|dry" || echo "   No symbol upload output found"
+	@echo ""
+	@echo "✅ iOS Release build complete (dry-run)"
+	@echo "   To test with actual upload, run: make app-release-ios"
+
+app-release-android:
+	@echo "🔨 Building Android Release with symbol upload..."
+	@echo ""
+	@if [ -z "$$DD_API_KEY" ]; then \
+		echo "❌ Error: DD_API_KEY environment variable not set"; \
+		echo ""; \
+		echo "Please set your Datadog API key:"; \
+		echo "  export DD_API_KEY='your-api-key'"; \
+		echo ""; \
+		echo "To test without uploading, run: make app-release-android-dry"; \
+		exit 1; \
+	fi
+	@echo "✅ DD_API_KEY is set"
+	@echo "⚠️  DatadogDryRun is currently: true (in csproj)"
+	@echo "   To enable actual upload, edit MauiApp/DatadogMauiApp.csproj:"
+	@echo "   Change <DatadogDryRun>true</DatadogDryRun> to false"
+	@echo ""
+	@bash -c 'source ./scripts/set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && DD_API_KEY=$$DD_API_KEY dotnet build -c Release -f net10.0-android' 2>&1 | tee /tmp/android-release.log
+	@echo ""
+	@echo "📋 Symbol Upload Summary:"
+	@grep -i "datadog" /tmp/android-release.log | grep -i "symbol\|mapping\|upload" || echo "   No symbol upload output found"
+	@echo ""
+	@echo "✅ Android Release build complete"
+
+app-release-ios:
+	@echo "🔨 Building iOS Release with symbol upload..."
+	@echo ""
+	@if [ -z "$$DD_API_KEY" ]; then \
+		echo "❌ Error: DD_API_KEY environment variable not set"; \
+		echo ""; \
+		echo "Please set your Datadog API key:"; \
+		echo "  export DD_API_KEY='your-api-key'"; \
+		echo ""; \
+		echo "To test without uploading, run: make app-release-ios-dry"; \
+		exit 1; \
+	fi
+	@echo "✅ DD_API_KEY is set"
+	@echo "⚠️  DatadogDryRun is currently: true (in csproj)"
+	@echo "   To enable actual upload, edit MauiApp/DatadogMauiApp.csproj:"
+	@echo "   Change <DatadogDryRun>true</DatadogDryRun> to false"
+	@echo ""
+	@bash -c 'source ./scripts/set-mobile-env.sh > /dev/null 2>&1 && cd MauiApp && DD_API_KEY=$$DD_API_KEY dotnet build -c Release -f net10.0-ios' 2>&1 | tee /tmp/ios-release.log
+	@echo ""
+	@echo "📋 Symbol Upload Summary:"
+	@grep -i "datadog" /tmp/ios-release.log | grep -i "symbol\|dsym\|upload" || echo "   No symbol upload output found"
+	@echo ""
+	@echo "✅ iOS Release build complete"
 
 # =============================================================================
 # Composite Commands

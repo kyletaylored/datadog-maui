@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="DatadogMauiApp.Pages.DiagnosticsPage"
+             Title="Diagnostics">
+
+    <ScrollView>
+        <VerticalStackLayout
+            Padding="30"
+            Spacing="25">
+
+            <Label
+                Text="Datadog Configuration"
+                FontSize="32"
+                FontAttributes="Bold"
+                HorizontalOptions="Center" />
+
+            <Label
+                Text="Current SDK configuration and runtime values"
+                FontSize="16"
+                HorizontalOptions="Center"
+                TextColor="Gray" />
+
+            <!-- Platform Info -->
+            <Frame
+                Padding="20"
+                CornerRadius="10"
+                HasShadow="True"
+                BackgroundColor="#E3F2FD">
+                <VerticalStackLayout Spacing="10">
+                    <Label
+                        Text="Platform Information"
+                        FontSize="20"
+                        FontAttributes="Bold"
+                        TextColor="#1976D2" />
+
+                    <Grid ColumnDefinitions="Auto,*" RowSpacing="8" ColumnSpacing="10">
+                        <Label Grid.Row="0" Grid.Column="0" Text="Platform:" FontAttributes="Bold" />
+                        <Label Grid.Row="0" Grid.Column="1" x:Name="PlatformLabel" />
+
+                        <Label Grid.Row="1" Grid.Column="0" Text="App Version:" FontAttributes="Bold" />
+                        <Label Grid.Row="1" Grid.Column="1" x:Name="AppVersionLabel" />
+
+                        <Label Grid.Row="2" Grid.Column="0" Text="Framework:" FontAttributes="Bold" />
+                        <Label Grid.Row="2" Grid.Column="1" x:Name="FrameworkLabel" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Core Configuration -->
+            <Frame
+                Padding="20"
+                CornerRadius="10"
+                HasShadow="True"
+                BackgroundColor="#F3E5F5">
+                <VerticalStackLayout Spacing="10">
+                    <Label
+                        Text="Core Configuration"
+                        FontSize="20"
+                        FontAttributes="Bold"
+                        TextColor="#7B1FA2" />
+
+                    <Grid ColumnDefinitions="Auto,*" RowSpacing="8" ColumnSpacing="10">
+                        <Label Grid.Row="0" Grid.Column="0" Text="Service Name:" FontAttributes="Bold" />
+                        <Label Grid.Row="0" Grid.Column="1" x:Name="ServiceNameLabel" />
+
+                        <Label Grid.Row="1" Grid.Column="0" Text="Environment:" FontAttributes="Bold" />
+                        <Label Grid.Row="1" Grid.Column="1" x:Name="EnvironmentLabel" />
+
+                        <Label Grid.Row="2" Grid.Column="0" Text="Site:" FontAttributes="Bold" />
+                        <Label Grid.Row="2" Grid.Column="1" x:Name="SiteLabel" />
+
+                        <Label Grid.Row="3" Grid.Column="0" Text="Verbose Logging:" FontAttributes="Bold" />
+                        <Label Grid.Row="3" Grid.Column="1" x:Name="VerboseLoggingLabel" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- RUM Configuration -->
+            <Frame
+                Padding="20"
+                CornerRadius="10"
+                HasShadow="True"
+                BackgroundColor="#E8F5E9">
+                <VerticalStackLayout Spacing="10">
+                    <Label
+                        Text="RUM Configuration"
+                        FontSize="20"
+                        FontAttributes="Bold"
+                        TextColor="#388E3C" />
+
+                    <Grid ColumnDefinitions="Auto,*" RowSpacing="8" ColumnSpacing="10">
+                        <Label Grid.Row="0" Grid.Column="0" Text="Application ID:" FontAttributes="Bold" />
+                        <Label Grid.Row="0" Grid.Column="1" x:Name="RumApplicationIdLabel" LineBreakMode="CharacterWrap" />
+
+                        <Label Grid.Row="1" Grid.Column="0" Text="Client Token:" FontAttributes="Bold" />
+                        <Label Grid.Row="1" Grid.Column="1" x:Name="ClientTokenLabel" LineBreakMode="CharacterWrap" />
+
+                        <Label Grid.Row="2" Grid.Column="0" Text="Session Sample Rate:" FontAttributes="Bold" />
+                        <Label Grid.Row="2" Grid.Column="1" x:Name="SessionSampleRateLabel" />
+
+                        <Label Grid.Row="3" Grid.Column="0" Text="Session Replay Rate:" FontAttributes="Bold" />
+                        <Label Grid.Row="3" Grid.Column="1" x:Name="SessionReplayRateLabel" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Credential Source -->
+            <Frame
+                Padding="20"
+                CornerRadius="10"
+                HasShadow="True"
+                BackgroundColor="#FFF3E0">
+                <VerticalStackLayout Spacing="10">
+                    <Label
+                        Text="Credential Source"
+                        FontSize="20"
+                        FontAttributes="Bold"
+                        TextColor="#F57C00" />
+
+                    <Label
+                        x:Name="CredentialSourceLabel"
+                        FontSize="14"
+                        TextColor="#424242" />
+
+                    <Label
+                        Text="Priority: Embedded Config → Environment Variable → Default Placeholder"
+                        FontSize="12"
+                        TextColor="Gray"
+                        HorizontalTextAlignment="Center"
+                        Margin="0,10,0,0" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- SDK Version Info -->
+            <Frame
+                Padding="20"
+                CornerRadius="10"
+                HasShadow="True"
+                BackgroundColor="#FCE4EC">
+                <VerticalStackLayout Spacing="10">
+                    <Label
+                        Text="SDK Information"
+                        FontSize="20"
+                        FontAttributes="Bold"
+                        TextColor="#C2185B" />
+
+                    <Grid ColumnDefinitions="Auto,*" RowSpacing="8" ColumnSpacing="10">
+                        <Label Grid.Row="0" Grid.Column="0" Text="Datadog.MAUI:" FontAttributes="Bold" />
+                        <Label Grid.Row="0" Grid.Column="1" Text="3.5.0" />
+
+                        <Label Grid.Row="1" Grid.Column="0" Text="Package Source:" FontAttributes="Bold" />
+                        <Label Grid.Row="1" Grid.Column="1" Text="https://kyletaylored.github.io/dd-sdk-maui" FontSize="10" LineBreakMode="CharacterWrap" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Refresh Button -->
+            <Button
+                x:Name="RefreshButton"
+                Text="Refresh Configuration"
+                Clicked="OnRefreshClicked"
+                HorizontalOptions="Fill"
+                BackgroundColor="#512BD4"
+                TextColor="White"
+                Margin="0,10,0,0" />
+
+            <Label
+                x:Name="LastUpdatedLabel"
+                Text=""
+                FontSize="12"
+                HorizontalOptions="Center"
+                TextColor="Gray"
+                Margin="0,5,0,0" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

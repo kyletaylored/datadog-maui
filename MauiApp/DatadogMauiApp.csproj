@@ -75,7 +75,7 @@
         <!-- Set DD_API_KEY environment variable before building -->
 
         <!-- Optional: Test with dry-run first (set to true to skip actual upload) -->
-        <DatadogDryRun>false</DatadogDryRun>
+        <DatadogDryRun>true</DatadogDryRun>
     </PropertyGroup>
 
     <!-- Android R8 Configuration (for ProGuard/R8 mapping file upload) -->
@@ -147,6 +147,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Datadog.MAUI" Version="3.5.0" />
         <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
 
@@ -168,27 +169,12 @@
         <AndroidResource Include="Platforms\Android\Resources\xml\network_security_config.xml" />
     </ItemGroup>
 
-    <!-- Android-specific Datadog bindings from NuGet -->
+    <!-- Fix for duplicate Compose runtime annotations -->
+    <!-- Exclude the JVM variant which conflicts with the Android variant -->
     <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
-        <PackageReference Include="Bcr.Datadog.Android.Sdk.Core" Version="2.21.0-pre.1" />
-        <PackageReference Include="Bcr.Datadog.Android.Sdk.Logs" Version="2.21.0-pre.1" />
-        <PackageReference Include="Bcr.Datadog.Android.Sdk.Rum" Version="2.21.0-pre.1" />
-        <PackageReference Include="Bcr.Datadog.Android.Sdk.SessionReplay" Version="2.21.0-pre.1" />
-        <PackageReference Include="Bcr.Datadog.Android.Sdk.SessionReplay.Material" Version="2.21.0-pre.1" />
-        <PackageReference Include="Bcr.Datadog.Android.Sdk.Trace" Version="2.21.0-pre.1" />
-        <PackageReference Include="Bcr.Datadog.Android.Sdk.Ndk" Version="2.21.0-pre.1" />
-        <PackageReference Include="Bcr.Datadog.Android.Sdk.WebView" Version="2.21.0-pre.1" />
-    </ItemGroup>
-
-    <!-- iOS-specific Datadog bindings from NuGet -->
-    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-ios'">
-        <PackageReference Include="Bcr.Datadog.iOS.Core" Version="2.26.0" />
-        <PackageReference Include="Bcr.Datadog.iOS.Logs" Version="2.26.0" />
-        <PackageReference Include="Bcr.Datadog.iOS.RUM" Version="2.26.0" />
-        <PackageReference Include="Bcr.Datadog.iOS.Trace" Version="2.26.0" />
-        <PackageReference Include="Bcr.Datadog.iOS.ObjC" Version="2.26.0" />
-        <PackageReference Include="Bcr.Datadog.iOS.CR" Version="2.26.0" />
-        <PackageReference Include="Bcr.Datadog.iOS.SR" Version="2.26.0" />
+        <PackageReference Include="Xamarin.AndroidX.Compose.Runtime.Annotation.Jvm" Version="1.10.0.1">
+            <ExcludeAssets>all</ExcludeAssets>
+        </PackageReference>
     </ItemGroup>
 
 </Project>

@@ -1,12 +1,13 @@
 using Android.App;
 using Android.Runtime;
-using Datadog.Android.Core.Configuration;
-using Datadog.Android.Log;
-using Datadog.Android.Ndk;
-using Datadog.Android.Privacy;
-using Datadog.Android.Rum;
-using Datadog.Android.SessionReplay;
-using Datadog.Android.Trace;
+using Com.Datadog.Android;
+using Com.Datadog.Android.Core.Configuration;
+using Com.Datadog.Android.Log;
+using Com.Datadog.Android.Ndk;
+using Com.Datadog.Android.Privacy;
+using Com.Datadog.Android.Rum;
+using Com.Datadog.Android.Sessionreplay;
+using Com.Datadog.Android.Trace;
 using DatadogConfig = DatadogMauiApp.Config.DatadogConfig;
 
 namespace DatadogMauiApp;
@@ -35,8 +36,8 @@ public class MainApplication : MauiApplication
             Console.WriteLine($"[Datadog] - RUM Application ID: {DatadogConfig.RumApplicationId}");
 
             // Create Datadog configuration
-            // Parameters: clientToken, env, variant, serviceName
-            var config = new DDConfiguration.Builder(
+            // Parameters: clientToken, env, variant, serviceName (as positional args)
+            var config = new Configuration.Builder(
                 DatadogConfig.ClientToken,
                 DatadogConfig.Environment,
                 string.Empty,  // variant - use empty string if no build variants
@@ -46,14 +47,14 @@ public class MainApplication : MauiApplication
             .Build();
 
             // Initialize Datadog SDK
-            Datadog.Android.Datadog.Initialize(this, config, TrackingConsent.Granted!);
+            Com.Datadog.Android.Datadog.Initialize(this, config, TrackingConsent.Granted!);
 
             Console.WriteLine("[Datadog] Core SDK initialized");
 
             // Set verbosity level for debugging
             if (DatadogConfig.VerboseLogging)
             {
-                Datadog.Android.Datadog.Verbosity = (int)Android.Util.LogPriority.Verbose;
+                Com.Datadog.Android.Datadog.Verbosity = (int)Android.Util.LogPriority.Verbose;
             }
 
             // Enable Logs
@@ -75,13 +76,13 @@ public class MainApplication : MauiApplication
                 .TrackNonFatalAnrs(true)
                 .Build();
 
-            Datadog.Android.Rum.Rum.Enable(rumConfiguration);
+            Com.Datadog.Android.Rum.Rum.Enable(rumConfiguration);
 
             Console.WriteLine("[Datadog] RUM enabled");
 
             // Initialize Global RUM Monitor
-            _ = Datadog.Android.Rum.GlobalRumMonitor.Instance;
-            _ = Datadog.Android.Rum.GlobalRumMonitor.Get();
+            _ = Com.Datadog.Android.Rum.GlobalRumMonitor.Instance;
+            _ = Com.Datadog.Android.Rum.GlobalRumMonitor.Get();
 
             // Enable Session Replay
             try
@@ -94,7 +95,7 @@ public class MainApplication : MauiApplication
                 .SetTouchPrivacy(TouchPrivacy.Show!) // Hide | Show
                 .Build();
 
-                Datadog.Android.SessionReplay.SessionReplay.Enable(sessionReplayConfig, Datadog.Android.Datadog.Instance);
+                Com.Datadog.Android.Sessionreplay.SessionReplay.Enable(sessionReplayConfig, Com.Datadog.Android.Datadog.Instance);
                 Console.WriteLine("[Datadog] Session Replay enabled");
             }
             catch (Exception ex)
@@ -106,7 +107,7 @@ public class MainApplication : MauiApplication
             try
             {
                 var traceConfig = new TraceConfiguration.Builder().Build();
-                Datadog.Android.Trace.Trace.Enable(traceConfig, Datadog.Android.Datadog.Instance);
+                Com.Datadog.Android.Trace.Trace.Enable(traceConfig, Com.Datadog.Android.Datadog.Instance);
                 Console.WriteLine("[Datadog] APM Tracing enabled");
             }
             catch (Exception ex)

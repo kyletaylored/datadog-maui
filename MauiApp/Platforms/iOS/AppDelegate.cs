@@ -1,6 +1,9 @@
 using Foundation;
 using UIKit;
-using Datadog.iOS.ObjC;
+using Datadog.iOS.Core;
+using Datadog.iOS.RUM;
+using Datadog.iOS.Logs;
+using Datadog.iOS.Trace;
 using DatadogMauiApp.Config;
 
 namespace DatadogMauiApp;
@@ -23,56 +26,54 @@ public class AppDelegate : MauiUIApplicationDelegate
             Console.WriteLine($"[Datadog] - Client Token: {DatadogConfig.ClientToken.Substring(0, 10)}...{DatadogConfig.ClientToken.Substring(DatadogConfig.ClientToken.Length - 4)}");
             Console.WriteLine($"[Datadog] - RUM Application ID: {DatadogConfig.RumApplicationId}");
 
-            // Initialize the Datadog SDK
+            // Initialize the Datadog SDK with new API
             var config = new DDConfiguration(
-                DatadogConfig.ClientToken,
-                DatadogConfig.Environment
+                clientToken: DatadogConfig.ClientToken,
+                env: DatadogConfig.Environment
             );
 
             config.Service = DatadogConfig.ServiceName;
             // Note: Site configuration depends on your Datadog site
             // config.Site = DDDatadogSite.Us1; // Uncomment and set appropriately
 
-            DDDatadog.Initialize(config, DDTrackingConsent.Granted);
+            DDDatadog.InitializeWithConfiguration(config, DDTrackingConsent.Granted);
 
             Console.WriteLine("[Datadog] Core SDK initialized");
 
             // Set verbosity level for debugging
             if (DatadogConfig.VerboseLogging)
             {
-                DDDatadog.VerbosityLevel = DDSDKVerbosityLevel.Debug;
+                DDDatadog.VerbosityLevel = DDCoreLoggerLevel.Debug;
             }
 
             // Enable Logs
-            DDLogs.Enable(new DDLogsConfiguration(null));
+            var logsConfiguration = new DDLogsConfiguration();
+            DDLogs.EnableWith(logsConfiguration);
 
             Console.WriteLine("[Datadog] Logs enabled");
 
-            // Enable RUM (Real User Monitoring) with URL session tracking for APM
-            var rumConfig = new DDRUMConfiguration(DatadogConfig.RumApplicationId);
-            rumConfig.SessionSampleRate = DatadogConfig.SessionSampleRate;
+            // Enable RUM (Real User Monitoring)
+            var rumConfig = new DDRUMConfiguration(applicationID: DatadogConfig.RumApplicationId);
+            rumConfig.SessionSampleRate = DatadogConfig.SessionSampleRate;  // Accepts float directly
             rumConfig.TrackFrustrations = true;
             rumConfig.TrackBackgroundEvents = true;
 
             // Note: iOS URLSession tracking configuration is different from Android
-            // The C# bindings (Bcr.Datadog.iOS v2.26.0) don't expose URLSessionInstrumentation APIs
-            // For distributed tracing on iOS, the native SDK requires:
-            // 1. URLSessionInstrumentation.enable() - not available in C# bindings yet
-            // 2. First-party hosts configured in Trace.Configuration.URLSessionTracking
+            // For distributed tracing on iOS, you may need to configure URLSessionInstrumentation
+            // separately using the native SDK if needed for advanced tracing scenarios.
             //
             // Basic RUM tracking (page views, user interactions, errors) works fine.
-            // Network tracing and trace correlation with backend may require native iOS code or binding updates.
 
-            DDRUM.Enable(rumConfig);
+            DDRUM.EnableWith(rumConfig);
 
             Console.WriteLine("[Datadog] RUM enabled");
-            Console.WriteLine("[Datadog] Note: URLSession tracking requires native iOS APIs not yet available in C# bindings");
 
             // Enable APM Tracing
             try
             {
-                DDTrace.Enable(new DDTraceConfiguration());
-                _ = DDTracer.Shared;
+                var traceConfig = new DDTraceConfiguration();
+                traceConfig.SampleRate = 100.0f;  // Sample 100% of traces
+                DDTrace.EnableWith(traceConfig);
                 Console.WriteLine("[Datadog] APM Tracing enabled");
             }
             catch (Exception ex)
@@ -81,7 +82,6 @@ public class AppDelegate : MauiUIApplicationDelegate
             }
 
             Console.WriteLine("[Datadog] Successfully initialized for iOS");
-            Console.WriteLine("[Datadog] Note: Crash Reporting and Session Replay require additional packages (Bcr.Datadog.iOS.CR, Bcr.Datadog.iOS.SR)");
         }
         catch (Exception ex)
         {

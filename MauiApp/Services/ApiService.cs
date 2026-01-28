@@ -4,7 +4,7 @@ using System.Text.Json;
 using DatadogMauiApp.Models;
 using Microsoft.Extensions.Logging;
 #if ANDROID
-using Datadog.Android.Trace;
+using Com.Datadog.Android.Trace;
 #endif
 
 namespace DatadogMauiApp.Services;

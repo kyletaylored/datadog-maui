@@ -2,8 +2,8 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 
 #if ANDROID
-using Datadog.Android.Rum;
-using Datadog.Android.Trace;
+using Com.Datadog.Android.Rum;
+using Com.Datadog.Android.Trace;
 #endif
 
 namespace DatadogMauiApp.Services;

@@ -21,6 +21,11 @@
             Title="Web Portal"
             ContentTemplate="{DataTemplate pages:WebPortalPage}"
             Icon="web.png" />
+
+        <ShellContent
+            Title="Diagnostics"
+            ContentTemplate="{DataTemplate pages:DiagnosticsPage}"
+            Icon="settings.png" />
     </TabBar>
 
 </Shell>

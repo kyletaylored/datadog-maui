@@ -1,0 +1,99 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
+name: Build and deploy ASP.NET Framework app to Azure Web App - datadog-maui-framework-api
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ApiFramework/**'
+      - '.github/workflows/azure-asa-deploy.yml'
+  workflow_dispatch:
+
+env:
+  AZURE_WEBAPP_NAME: 'datadog-maui-framework-api'
+  SOLUTION_PATH: 'ApiFramework'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild path
+        uses: microsoft/setup-msbuild@v1.0.2
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v1.0.5
+
+      - name: Restore NuGet packages
+        working-directory: ./${{ env.SOLUTION_PATH }}
+        run: nuget restore
+
+      - name: Publish to folder
+        working-directory: ./${{ env.SOLUTION_PATH }}
+        run: msbuild /nologo /verbosity:m /t:Build /t:pipelinePreDeployCopyAllFilesToOneFolder /p:_PackageTempDir="${{ github.workspace }}\published\" /p:Configuration=Release
+
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: ASP-app
+          path: ${{ github.workspace }}/published/**
+
+  deploy:
+    runs-on: windows-latest
+    needs: build
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: ASP-app
+          path: ./deployment
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          slot-name: 'Production'
+          package: ./deployment
+
+      - name: Health Check
+        run: |
+          echo "Waiting 30 seconds for deployment to complete..."
+          Start-Sleep -Seconds 30
+          try {
+            $response = Invoke-RestMethod -Uri "https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health" -TimeoutSec 10
+            if ($response.status -eq "healthy") {
+              Write-Host "✅ Health check passed"
+              Write-Host "Response: $($response | ConvertTo-Json)"
+            } else {
+              Write-Host "⚠️ Health check returned unexpected status"
+              Write-Host "Response: $($response | ConvertTo-Json)"
+            }
+          } catch {
+            Write-Host "⚠️ Health check failed or timed out"
+            Write-Host "Error: $($_.Exception.Message)"
+            Write-Host "This may be normal if the app is still starting up"
+          }
+        shell: pwsh

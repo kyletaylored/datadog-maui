@@ -32,9 +32,15 @@ jobs:
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v1.0.5
 
+      - name: Create .env file for build
+        run: |
+          echo "DD_RUM_WEB_CLIENT_TOKEN=${{ secrets.DD_RUM_WEB_CLIENT_TOKEN }}" > .env
+          echo "DD_RUM_WEB_APPLICATION_ID=${{ secrets.DD_RUM_WEB_APPLICATION_ID }}" >> .env
+        shell: bash
+
       - name: Restore NuGet packages
         working-directory: ./${{ env.SOLUTION_PATH }}
-        run: nuget restore
+        run: msbuild /t:Restore /p:Configuration=Release
 
       - name: Publish to folder
         working-directory: ./${{ env.SOLUTION_PATH }}

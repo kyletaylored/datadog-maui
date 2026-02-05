@@ -16,6 +16,8 @@ make app-release-android-dry
 make app-release-ios-dry
 ```
 
+**Important:** Symbol upload runs during `dotnet publish`, not `dotnet build`. The Makefile commands use `publish` automatically.
+
 ### Real Symbol Upload
 
 Upload symbols to Datadog (requires API key):
@@ -162,6 +164,30 @@ $ make app-release-android
 
 ## Troubleshooting
 
+### Dry-Run Error: Empty String Parameter
+
+**Problem:**
+```
+error : [Datadog] Unexpected error during symbol upload: The value cannot be an empty string. (Parameter 'oldValue')
+```
+
+**Cause:** Bug in Datadog.MAUI.Symbols v1.0.0 when running dry-run mode without `DD_API_KEY` set.
+
+**Impact:**
+- ✅ Symbol upload task **IS running** correctly
+- ✅ Symbol files are being found and processed
+- ❌ Error occurs during dry-run simulation only
+- ✅ Real uploads (with DD_API_KEY) work fine
+
+**Workaround:**
+Set a dummy API key for dry-run testing:
+```bash
+export DD_API_KEY="dummy-key-for-dry-run"
+make app-release-android-dry
+```
+
+**Details:** See [Symbol Upload Important Notes](SYMBOL_UPLOAD_IMPORTANT.md#known-issues) for more information.
+
 ### Error: DD_API_KEY not set
 
 **Problem:**
@@ -193,6 +219,52 @@ Ensure R8 is enabled in Release configuration. This is already configured in [Da
   <AndroidLinkMode>Full</AndroidLinkMode>
 </PropertyGroup>
 ```
+
+### Error: iOS Code Signing Required
+
+**Problem:**
+```
+error : No valid iOS code signing keys found in keychain.
+You need to request a codesigning certificate from https://developer.apple.com.
+```
+
+**Cause:** iOS device builds require valid Apple Developer code signing certificates.
+
+**Solution Options:**
+
+1. **Set up Code Signing** (Recommended for real testing):
+   - Enroll in [Apple Developer Program](https://developer.apple.com)
+   - Create provisioning profile and certificate
+   - Install certificate in macOS Keychain
+   - Configure in Xcode or csproj
+
+2. **Use Simulator Build** (Limited - won't test symbol upload):
+   ```bash
+   dotnet publish -c Release -f net10.0-ios -r iossimulator-arm64
+   ```
+   Note: Simulator builds don't generate proper dSYMs for symbol upload testing.
+
+3. **Skip iOS for Now**: Test symbol upload with Android only (`make app-release-android-dry`)
+
+**Important:** Symbol upload requires device builds because simulator builds don't generate production-ready dSYM bundles.
+
+### Error: iOS Runtime Identifier Required
+
+**Problem:**
+```
+error : A runtime identifier for a device architecture must be specified in order to publish this project.
+'iossimulator-arm64' is a simulator architecture.
+```
+
+**Cause:** iOS release builds require a device runtime identifier, not simulator architecture.
+
+**Solution:**
+Add `-r ios-arm64` to the publish command:
+```bash
+dotnet publish -c Release -f net10.0-ios -r ios-arm64
+```
+
+The Makefile commands already include this flag automatically.
 
 ### Error: dSYM not found
 
@@ -277,6 +349,8 @@ After uploading:
 
 ## Manual Build Commands
 
+**Important:** Use `dotnet publish` instead of `dotnet build`. The Datadog.MAUI.Symbols package hooks into the Publish target, not the Build target.
+
 If you prefer not to use Make:
 
 ### Android Release (Manual)
@@ -284,25 +358,27 @@ If you prefer not to use Make:
 ```bash
 # Dry-run (default)
 cd MauiApp
-dotnet build -c Release -f net10.0-android
+dotnet publish -c Release -f net10.0-android
 
 # With actual upload
 export DD_API_KEY="your-key"
 # Edit csproj: <DatadogDryRun>false</DatadogDryRun>
-dotnet build -c Release -f net10.0-android
+dotnet publish -c Release -f net10.0-android
 ```
 
 ### iOS Release (Manual)
 
+**Important:** iOS requires a device runtime identifier (`-r ios-arm64`) for release builds.
+
 ```bash
 # Dry-run (default)
 cd MauiApp
-dotnet build -c Release -f net10.0-ios
+dotnet publish -c Release -f net10.0-ios -r ios-arm64
 
 # With actual upload
 export DD_API_KEY="your-key"
 # Edit csproj: <DatadogDryRun>false</DatadogDryRun>
-dotnet build -c Release -f net10.0-ios
+dotnet publish -c Release -f net10.0-ios -r ios-arm64
 ```
 
 ## Build Artifacts

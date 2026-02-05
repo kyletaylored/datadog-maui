@@ -1,6 +1,8 @@
 # Azure App Service Deployment Guide
 
-This guide explains how to deploy the Datadog MAUI API to Azure App Service on Windows.
+This guide explains how to deploy the **Api** directory (.NET 9.0 container app) to Azure App Service on Windows.
+
+**Note:** For deploying the **ApiFramework** (.NET Framework 4.8) to Azure Web App, see [APIFRAMEWORK_DEPLOYMENT.md](APIFRAMEWORK_DEPLOYMENT.md).
 
 ## Prerequisites
 

@@ -75,13 +75,13 @@
         <!-- Set DD_API_KEY environment variable before building -->
 
         <!-- Optional: Test with dry-run first (set to true to skip actual upload) -->
-        <DatadogDryRun>true</DatadogDryRun>
+        <DatadogDryRun>false</DatadogDryRun>
     </PropertyGroup>
 
     <!-- Android R8 Configuration (for ProGuard/R8 mapping file upload) -->
     <PropertyGroup Condition="'$(Configuration)' == 'Release' AND '$(TargetFramework)' == 'net10.0-android'">
         <!-- Enable R8 code shrinker (generates mapping files for Datadog) -->
-        <AndroidEnableProguard>true</AndroidEnableProguard>
+        <AndroidEnableR8>true</AndroidEnableR8>
         <AndroidLinkTool>r8</AndroidLinkTool>
         <AndroidLinkMode>Full</AndroidLinkMode>
     </PropertyGroup>
@@ -112,11 +112,7 @@
         <Message Text="[MSBuild]   Client Token: $(IosClientToken)" Importance="high" Condition="'$(IosClientToken)' != ''" />
         <Message Text="[MSBuild]   Application ID: $(IosApplicationId)" Importance="high" Condition="'$(IosApplicationId)' != ''" />
         <Warning Text="[MSBuild] ⚠️  No iOS RUM credentials found! App will use placeholder values." Condition="'$(IosClientToken)' == '' AND '$(DD_RUM_IOS_CLIENT_TOKEN)' == ''" />
-        <WriteLinesToFile
-            File="$(IosRumConfigFile)"
-            Lines="DD_RUM_IOS_CLIENT_TOKEN=$(IosClientToken);DD_RUM_IOS_APPLICATION_ID=$(IosApplicationId)"
-            Overwrite="true"
-            Condition="'$(IosClientToken)' != ''" />
+        <WriteLinesToFile File="$(IosRumConfigFile)" Lines="DD_RUM_IOS_CLIENT_TOKEN=$(IosClientToken);DD_RUM_IOS_APPLICATION_ID=$(IosApplicationId)" Overwrite="true" Condition="'$(IosClientToken)' != ''" />
     </Target>
 
     <!-- Include Android config file as embedded resource -->
@@ -151,8 +147,8 @@
         <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.1" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
 
-        <!-- Datadog Symbol Upload Package (from local-packages) -->
-        <PackageReference Include="Datadog.MAUI.Symbols" Version="1.0.0" />
+        <!-- Datadog Symbol Upload Package -->
+        <PackageReference Include="Datadog.MAUI.Symbols" Version="0.0.2" />
     </ItemGroup>
 
     <!-- Configure package sources for Datadog packages -->

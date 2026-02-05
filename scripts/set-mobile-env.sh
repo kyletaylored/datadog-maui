@@ -3,6 +3,12 @@
 # Load and export mobile app environment variables from .env
 # Usage: source ./set-mobile-env.sh
 
+# Set up Android SDK environment if not already set
+if [ -z "$ANDROID_HOME" ] && [ -d "$HOME/Library/Android/sdk" ]; then
+    export ANDROID_HOME="$HOME/Library/Android/sdk"
+    export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/tools:$PATH"
+fi
+
 # Load .env file if it exists
 if [ -f .env ]; then
     # Export Android RUM credentials

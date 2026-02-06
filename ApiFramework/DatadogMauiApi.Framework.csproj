@@ -45,7 +45,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Datadog.Trace, Version=3.35.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb, processorArchitecture=MSIL">
-      <HintPath>packages\Datadog.Trace.3.35.0\lib\net461\Datadog.Trace.dll</HintPath>
+      <HintPath>packages\Datadog.Trace.3.35.0\lib\net461\Datadog.Trace.Manual.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.Owin, Version=4.2.2.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">

@@ -73,19 +73,16 @@ jobs:
           if (!(Test-Path packages)) { Write-Host "packages folder missing - restore failed"; exit 1 }
           Get-ChildItem packages -Directory | Select-Object -First 80 | ForEach-Object { Write-Host $_.Name }
 
-          # packages.config layout is "PackageId.Version"
-          $ddDir = Join-Path "packages" "Datadog.Trace.3.35.0"
-          $ddDll = Join-Path $ddDir "lib\net45\Datadog.Trace.dll"
+          # Find Datadog.Trace.dll under the packages folder (flexible path matching)
+          $ddDlls = Get-ChildItem packages -Recurse -Filter "Datadog.Trace.dll" -ErrorAction SilentlyContinue
 
-          Write-Host "Checking for: $ddDll"
-          if (!(Test-Path $ddDll)) {
-            Write-Host "Datadog.Trace.dll not found where expected."
-            Write-Host "Searching for Datadog.Trace.dll under packages..."
-            Get-ChildItem packages -Recurse -Filter "Datadog.Trace.dll" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.FullName }
+          if ($ddDlls.Count -eq 0) {
+            Write-Host "❌ Datadog.Trace.dll not found in packages folder"
             exit 1
           }
 
-          Write-Host "✅ Found Datadog.Trace.dll: $ddDll"
+          Write-Host "✅ Found Datadog.Trace.dll:"
+          $ddDlls | ForEach-Object { Write-Host "   $($_.FullName)" }
 
       - name: Build solution (Rebuild, create binlog)
         working-directory: ./${{ env.SOLUTION_PATH }}

@@ -95,7 +95,7 @@ jobs:
 
       - name: Build solution (Rebuild, create binlog)
         working-directory: ./${{ env.SOLUTION_PATH }}
-        run: msbuild ${{ env.SOLUTION_FILE }} /m /t:Rebuild /p:Configuration=Release /p:Platform="Any CPU" /bl:"${{ github.workspace }}\msbuild.binlog"
+        run: msbuild ${{ env.SOLUTION_FILE }} /m /t:Rebuild /p:Configuration=Release /p:Platform=AnyCPU /bl:"${{ github.workspace }}\msbuild.binlog"
 
       - name: Publish web project to folder
         working-directory: ./${{ env.SOLUTION_PATH }}
@@ -104,7 +104,7 @@ jobs:
           /m
           /t:Build
           /p:Configuration=Release
-          /p:Platform="Any CPU"
+          /p:Platform=AnyCPU
           /p:DeployOnBuild=true
           /p:WebPublishMethod=FileSystem
           /p:PublishUrl="${{ env.PUBLISHED_DIR }}"

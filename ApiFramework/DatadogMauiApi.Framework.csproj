@@ -96,7 +96,9 @@
   <ItemGroup>
     <Content Include="Web.config" />
     <Content Include="index.html" />
-    <!-- rum-config.js is generated during build and copied by custom target -->
+    <Content Include="favicon.png" Condition="Exists('$(ProjectDir)favicon.png')" />
+    <!-- rum-config.js is generated during build - include it with condition so it's published -->
+    <Content Include="rum-config.js" Condition="Exists('$(ProjectDir)rum-config.js')" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\WebApiConfig.cs" />
@@ -147,10 +149,6 @@
   <Target Name="GenerateRumConfig" BeforeTargets="BeforeBuild">
     <!-- Generate RUM config from .env file before build -->
     <Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(ProjectDir)generate-rum-config.ps1&quot;" />
-    <!-- Include the generated file as Content so it's deployed with the app -->
-    <ItemGroup>
-      <Content Include="$(ProjectDir)rum-config.js" Condition="Exists('$(ProjectDir)rum-config.js')" />
-    </ItemGroup>
   </Target>
   <ProjectExtensions>
     <VisualStudio>

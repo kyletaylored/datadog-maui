@@ -109,5 +109,6 @@ if ($clientToken.Length -gt 0) {
     Write-Host "  Client Token: ${tokenPreview}..."
 }
 Write-Host "  Application ID: ${applicationId}"
+Write-Host "  Service: ${service}"
 Write-Host "  Site: ${site}"
 Write-Host "  Environment: ${envName}"

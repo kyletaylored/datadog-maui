@@ -73,11 +73,26 @@ jobs:
           if (!(Test-Path packages)) { Write-Host "packages folder missing - restore failed"; exit 1 }
           Get-ChildItem packages -Directory | Select-Object -First 80 | ForEach-Object { Write-Host $_.Name }
 
+          # Debug: Check what's inside the Datadog.Trace package folder
+          Write-Host "`n==== Contents of Datadog.Trace.3.35.0 folder ===="
+          if (Test-Path "packages\Datadog.Trace.3.35.0") {
+            Get-ChildItem "packages\Datadog.Trace.3.35.0" -Recurse | Select-Object -First 50 | ForEach-Object {
+              Write-Host "  $($_.FullName.Replace((Get-Location).Path, '.'))"
+            }
+          } else {
+            Write-Host "❌ Datadog.Trace.3.35.0 folder doesn't exist!"
+          }
+
           # Find Datadog.Trace.dll under the packages folder (flexible path matching)
+          Write-Host "`n==== Searching for Datadog.Trace.dll ===="
           $ddDlls = Get-ChildItem packages -Recurse -Filter "Datadog.Trace.dll" -ErrorAction SilentlyContinue
 
           if ($ddDlls.Count -eq 0) {
             Write-Host "❌ Datadog.Trace.dll not found in packages folder"
+            Write-Host "`nSearching for any .dll files in Datadog.Trace package:"
+            Get-ChildItem "packages\Datadog.Trace.3.35.0" -Recurse -Filter "*.dll" -ErrorAction SilentlyContinue | ForEach-Object {
+              Write-Host "  Found: $($_.Name) at $($_.DirectoryName)"
+            }
             exit 1
           }
 

@@ -38,12 +38,54 @@ jobs:
           echo "DD_RUM_WEB_APPLICATION_ID=${{ secrets.DD_RUM_WEB_APPLICATION_ID }}" >> .env
         shell: bash
 
-      - name: Restore NuGet packages (packages.config -> solution packages folder)
+      - name: Validate NuGet config & restore packages (packages.config -> solution packages folder)
         working-directory: ./${{ env.SOLUTION_PATH }}
         shell: pwsh
         run: |
+          # If a repository nuget.config exists, print it and pass it explicitly to nuget restore.
+          if (Test-Path nuget.config) {
+            Write-Host "==== Found nuget.config in repository: ===="
+            Get-Content nuget.config
+            $cfgArg = "-ConfigFile `"$PWD\nuget.config`""
+          } else {
+            Write-Host "==== No nuget.config in repository. Using default sources. ===="
+            $cfgArg = ""
+          }
+
+          Write-Host "==== nuget.exe sources list (what nuget will use) ===="
+          nuget.exe sources list
+
+          # Clean local packages folder (idempotent)
           if (Test-Path packages) { Remove-Item -Recurse -Force packages }
-          nuget restore ${{ env.SOLUTION_FILE }} -Verbosity detailed -PackagesDirectory "$(pwd)/packages"
+
+          # Restore into local solution packages dir so classic HintPaths resolve
+          if ($cfgArg -ne "") {
+            nuget.exe restore ${{ env.SOLUTION_FILE }} -Verbosity detailed -PackagesDirectory "$(pwd)/packages" $cfgArg
+          } else {
+            nuget.exe restore ${{ env.SOLUTION_FILE }} -Verbosity detailed -PackagesDirectory "$(pwd)/packages"
+          }
+
+      - name: Sanity-check restored packages (Datadog.Trace DLL exists)
+        working-directory: ./${{ env.SOLUTION_PATH }}
+        shell: pwsh
+        run: |
+          Write-Host "Listing packages folder top-level entries:"
+          if (!(Test-Path packages)) { Write-Host "packages folder missing - restore failed"; exit 1 }
+          Get-ChildItem packages -Directory | Select-Object -First 80 | ForEach-Object { Write-Host $_.Name }
+
+          # packages.config layout is "PackageId.Version"
+          $ddDir = Join-Path "packages" "Datadog.Trace.3.35.0"
+          $ddDll = Join-Path $ddDir "lib\net45\Datadog.Trace.dll"
+
+          Write-Host "Checking for: $ddDll"
+          if (!(Test-Path $ddDll)) {
+            Write-Host "Datadog.Trace.dll not found where expected."
+            Write-Host "Searching for Datadog.Trace.dll under packages..."
+            Get-ChildItem packages -Recurse -Filter "Datadog.Trace.dll" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.FullName }
+            exit 1
+          }
+
+          Write-Host "✅ Found Datadog.Trace.dll: $ddDll"
 
       - name: Build solution (Rebuild, create binlog)
         working-directory: ./${{ env.SOLUTION_PATH }}
@@ -67,6 +109,13 @@ jobs:
         with:
           name: ASP-app
           path: ${{ github.workspace }}\published\**
+
+      - name: Upload MSBuild binlog (for debugging)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: msbuild-binlog
+          path: ${{ github.workspace }}\msbuild.binlog
 
   deploy:
     runs-on: windows-latest

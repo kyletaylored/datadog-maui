@@ -45,6 +45,7 @@ console.warn('[Datadog] RUM config loaded with empty credentials - check .env fi
 $rumConfig = @{
     clientToken = ''
     applicationId = ''
+    service = 'datadog-maui-api-framework'
     site = 'datadoghq.com'
     env = 'prod'
 }
@@ -66,6 +67,7 @@ Get-Content $envFile | ForEach-Object {
         switch ($key) {
             'DD_RUM_WEB_CLIENT_TOKEN' { $rumConfig.clientToken = $value }
             'DD_RUM_WEB_APPLICATION_ID' { $rumConfig.applicationId = $value }
+            'DD_RUM_WEB_SERVICE' { $rumConfig.service = $value }
             'DD_SITE' { $rumConfig.site = $value }
             'DD_ENV' { $rumConfig.env = $value }
         }
@@ -77,6 +79,7 @@ $clientToken = $rumConfig['clientToken']
 $applicationId = $rumConfig['applicationId']
 $site = $rumConfig['site']
 $envName = $rumConfig['env']
+$service = $rumConfig['service']
 
 $jsConfig = @"
 // RUM Configuration (generated from .env)
@@ -85,7 +88,7 @@ window.DD_RUM_CONFIG = {
     clientToken: '$clientToken',
     applicationId: '$applicationId',
     site: '$site',
-    service: 'datadog-maui-web-framework',
+    service: '$service',
     env: '$envName',
     version: '1.0.0',
     sessionSampleRate: 100,

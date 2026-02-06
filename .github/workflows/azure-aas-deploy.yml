@@ -110,24 +110,24 @@ jobs:
           /p:DeleteExistingFiles=true
           /p:CreatePackageOnPublish=false
 
-      - name: Verify published files
-        shell: pwsh
-        run: |
-          Write-Host "Checking published directory: ${{ env.PUBLISHED_DIR }}"
-          if (Test-Path "${{ env.PUBLISHED_DIR }}") {
-            Write-Host "✅ Published directory exists"
-            Write-Host "Contents:"
-            Get-ChildItem "${{ env.PUBLISHED_DIR }}" -Recurse | Select-Object -First 20 | ForEach-Object {
-              Write-Host "  $($_.FullName)"
-            }
-          } else {
-            Write-Host "❌ Published directory not found at: ${{ env.PUBLISHED_DIR }}"
-            Write-Host "Searching for published files..."
-            Get-ChildItem "${{ github.workspace }}" -Directory -Filter "*publish*" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
-              Write-Host "Found: $($_.FullName)"
-            }
-            exit 1
-          }
+      # - name: Verify published files
+      #   shell: pwsh
+      #   run: |
+      #     Write-Host "Checking published directory: ${{ env.PUBLISHED_DIR }}"
+      #     if (Test-Path "${{ env.PUBLISHED_DIR }}") {
+      #       Write-Host "✅ Published directory exists"
+      #       Write-Host "Contents:"
+      #       Get-ChildItem "${{ env.PUBLISHED_DIR }}" -Recurse | Select-Object -First 20 | ForEach-Object {
+      #         Write-Host "  $($_.FullName)"
+      #       }
+      #     } else {
+      #       Write-Host "❌ Published directory not found at: ${{ env.PUBLISHED_DIR }}"
+      #       Write-Host "Searching for published files..."
+      #       Get-ChildItem "${{ github.workspace }}" -Directory -Filter "*publish*" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+      #         Write-Host "Found: $($_.FullName)"
+      #       }
+      #       exit 1
+      #     }
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4

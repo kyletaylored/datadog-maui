@@ -96,7 +96,6 @@
   <ItemGroup>
     <Content Include="Web.config" />
     <Content Include="index.html" />
-    <Content Include="wwwroot\index.html" />
     <!-- rum-config.js is generated during build and copied by custom target -->
   </ItemGroup>
   <ItemGroup>

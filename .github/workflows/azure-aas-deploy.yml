@@ -14,7 +14,7 @@ env:
   SOLUTION_PATH: 'ApiFramework'
   SOLUTION_FILE: 'DatadogMauiApi.Framework.sln'
   PROJECT_FILE: 'DatadogMauiApi.Framework.csproj'
-  PUBLISHED_DIR: '${{ github.workspace }}\\published'
+  PUBLISHED_DIR: '${{ github.workspace }}\published'
 
 jobs:
   build:

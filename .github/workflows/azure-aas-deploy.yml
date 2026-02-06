@@ -1,6 +1,3 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
 name: Build and deploy ASP.NET Framework app to Azure Web App - datadog-maui-framework-api
 
 on:
@@ -17,6 +14,7 @@ env:
   SOLUTION_PATH: 'ApiFramework'
   SOLUTION_FILE: 'DatadogMauiApi.Framework.sln'
   PROJECT_FILE: 'DatadogMauiApi.Framework.csproj'
+  PUBLISHED_DIR: '${{ github.workspace }}\\published'
 
 jobs:
   build:
@@ -40,13 +38,32 @@ jobs:
           echo "DD_RUM_WEB_APPLICATION_ID=${{ secrets.DD_RUM_WEB_APPLICATION_ID }}" >> .env
         shell: bash
 
-      - name: Restore NuGet packages (packages.config)
+      - name: Restore NuGet packages (packages.config -> solution packages folder)
         working-directory: ./${{ env.SOLUTION_PATH }}
-        run: nuget restore ${{ env.SOLUTION_FILE }} -Verbosity detailed
+        run: |
+          # ensure a clean packages dir (idempotent)
+          if (Test-Path packages) { Remove-Item -Recurse -Force packages } 
+          # restore into a solution-local 'packages' folder so HintPath-based references resolve
+          nuget restore ${{ env.SOLUTION_FILE }} -Verbosity detailed -PackagesDirectory "$(pwd)/packages"
+        shell: pwsh
 
-      - name: Build solution (Release)
+      - name: Sanity-check restored packages (show a few entries)
         working-directory: ./${{ env.SOLUTION_PATH }}
-        run: msbuild ${{ env.SOLUTION_FILE }} /m /t:Rebuild /p:Configuration=Release /p:Platform="Any CPU"
+        shell: pwsh
+        run: |
+          Write-Host "Listing packages folder top-level entries:"
+          if (Test-Path packages) {
+            Get-ChildItem packages -Directory | Select-Object -First 40 | ForEach-Object { Write-Host $_.Name }
+            Write-Host "Checking for Datadog.Trace folder presence..."
+            if (Test-Path packages/Datadog.Trace) { Write-Host "Found packages/Datadog.Trace" } else { Write-Host "packages/Datadog.Trace NOT found" ; exit 1 }
+          } else {
+            Write-Host "packages folder missing - restore failed"
+            exit 1
+          }
+
+      - name: Build solution (Rebuild, create binlog)
+        working-directory: ./${{ env.SOLUTION_PATH }}
+        run: msbuild ${{ env.SOLUTION_FILE }} /m /t:Rebuild /p:Configuration=Release /p:Platform="Any CPU" /bl:"${{ github.workspace }}\msbuild.binlog"
 
       - name: Publish web project to folder
         working-directory: ./${{ env.SOLUTION_PATH }}
@@ -58,7 +75,7 @@ jobs:
           /p:Platform="Any CPU"
           /p:DeployOnBuild=true
           /p:WebPublishMethod=FileSystem
-          /p:PublishUrl="${{ github.workspace }}\published"
+          /p:PublishUrl="${{ env.PUBLISHED_DIR }}"
           /p:DeleteExistingFiles=true
 
       - name: Upload artifact for deployment job

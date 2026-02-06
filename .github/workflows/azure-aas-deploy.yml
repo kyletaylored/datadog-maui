@@ -40,26 +40,32 @@ jobs:
 
       - name: Restore NuGet packages (packages.config -> solution packages folder)
         working-directory: ./${{ env.SOLUTION_PATH }}
-        run: |
-          # ensure a clean packages dir (idempotent)
-          if (Test-Path packages) { Remove-Item -Recurse -Force packages } 
-          # restore into a solution-local 'packages' folder so HintPath-based references resolve
-          nuget restore ${{ env.SOLUTION_FILE }} -Verbosity detailed -PackagesDirectory "$(pwd)/packages"
         shell: pwsh
+        run: |
+          if (Test-Path packages) { Remove-Item -Recurse -Force packages }
+          nuget restore ${{ env.SOLUTION_FILE }} -Verbosity detailed -PackagesDirectory "$(pwd)/packages"
 
-      - name: Sanity-check restored packages (show a few entries)
+      - name: Sanity-check restored packages (Datadog.Trace DLL exists)
         working-directory: ./${{ env.SOLUTION_PATH }}
         shell: pwsh
         run: |
           Write-Host "Listing packages folder top-level entries:"
-          if (Test-Path packages) {
-            Get-ChildItem packages -Directory | Select-Object -First 40 | ForEach-Object { Write-Host $_.Name }
-            Write-Host "Checking for Datadog.Trace folder presence..."
-            if (Test-Path packages/Datadog.Trace) { Write-Host "Found packages/Datadog.Trace" } else { Write-Host "packages/Datadog.Trace NOT found" ; exit 1 }
-          } else {
-            Write-Host "packages folder missing - restore failed"
+          if (!(Test-Path packages)) { Write-Host "packages folder missing - restore failed"; exit 1 }
+          Get-ChildItem packages -Directory | Select-Object -First 50 | ForEach-Object { Write-Host $_.Name }
+
+          # packages.config layout is "PackageId.Version"
+          $ddDir = Join-Path "packages" "Datadog.Trace.3.35.0"
+          $ddDll = Join-Path $ddDir "lib\net45\Datadog.Trace.dll"
+
+          Write-Host "Checking for: $ddDll"
+          if (!(Test-Path $ddDll)) {
+            Write-Host "Datadog.Trace.dll not found where expected."
+            Write-Host "Searching for Datadog.Trace.dll under packages..."
+            Get-ChildItem packages -Recurse -Filter "Datadog.Trace.dll" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_.FullName }
             exit 1
           }
+
+          Write-Host "✅ Found Datadog.Trace.dll: $ddDll"
 
       - name: Build solution (Rebuild, create binlog)
         working-directory: ./${{ env.SOLUTION_PATH }}

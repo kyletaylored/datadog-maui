@@ -148,16 +148,13 @@
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
 
         <!-- Datadog Symbol Upload Package -->
-        <PackageReference Include="Datadog.MAUI.Symbols" Version="0.0.2" />
+        <PackageReference Include="kyletaylored.Datadog.MAUI.Symbols" Version="0.1.0" />
     </ItemGroup>
 
     <!-- Configure package sources for Datadog packages -->
     <ItemGroup>
         <!-- Local package source -->
         <RestoreAdditionalProjectSources Include="$(MSBuildProjectDirectory)/../local-packages" />
-
-        <!-- Remote static NuGet feed for Datadog MAUI packages -->
-        <RestoreAdditionalProjectSources Include="https://kyletaylored.github.io/dd-sdk-maui/nuget/index.json" />
     </ItemGroup>
 
     <!-- Android-specific resources -->

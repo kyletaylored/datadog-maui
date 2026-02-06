@@ -1,4 +1,4 @@
-name: Build and deploy ASP.NET Framework app to Azure Web App - datadog-maui-framework-api
+name: Build and deploy ASP.NET Framework app to Azure Web App
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_WEBAPP_NAME: 'datadog-maui-framework-api'
+  AZURE_WEBAPP_NAME: 'datadog-maui-api-framework'
   SOLUTION_PATH: 'ApiFramework'
   SOLUTION_FILE: 'DatadogMauiApi.Framework.sln'
   PROJECT_FILE: 'DatadogMauiApi.Framework.csproj'

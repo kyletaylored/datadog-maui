@@ -101,46 +101,85 @@ jobs:
         working-directory: ./${{ env.SOLUTION_PATH }}
         run: >
           msbuild ${{ env.PROJECT_FILE }}
-          /m
+          /t:WebPublish
           /p:Configuration=Release
           /p:Platform=AnyCPU
-          /p:DeployOnBuild=true
           /p:WebPublishMethod=FileSystem
-          /p:PublishUrl="${{ env.PUBLISHED_DIR }}"
+          /p:publishUrl="${{ env.PUBLISHED_DIR }}"
           /p:DeleteExistingFiles=true
-          /p:CreatePackageOnPublish=false
+          /v:detailed
+          /fl
+          /flp:logfile="${{ github.workspace }}\publish.log"
 
-      # - name: Verify published files
-      #   shell: pwsh
-      #   run: |
-      #     Write-Host "Checking published directory: ${{ env.PUBLISHED_DIR }}"
-      #     if (Test-Path "${{ env.PUBLISHED_DIR }}") {
-      #       Write-Host "✅ Published directory exists"
-      #       Write-Host "Contents:"
-      #       Get-ChildItem "${{ env.PUBLISHED_DIR }}" -Recurse | Select-Object -First 20 | ForEach-Object {
-      #         Write-Host "  $($_.FullName)"
-      #       }
-      #     } else {
-      #       Write-Host "❌ Published directory not found at: ${{ env.PUBLISHED_DIR }}"
-      #       Write-Host "Searching for published files..."
-      #       Get-ChildItem "${{ github.workspace }}" -Directory -Filter "*publish*" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
-      #         Write-Host "Found: $($_.FullName)"
-      #       }
-      #       exit 1
-      #     }
+      - name: Search for published files (diagnostic)
+        shell: pwsh
+        run: |
+          Write-Host "=== Searching for Web.config files (indicates published app) ==="
+          Get-ChildItem "${{ github.workspace }}" -Filter "Web.config" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Host "Found Web.config at: $($_.DirectoryName)"
+          }
+
+          Write-Host "`n=== Searching for bin directories (compiled output) ==="
+          Get-ChildItem "${{ github.workspace }}" -Directory -Filter "bin" -Recurse -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -notlike "*\packages\*" } |
+            ForEach-Object {
+              Write-Host "Found bin at: $($_.FullName)"
+              Write-Host "  Contents: $(((Get-ChildItem $_.FullName -File).Name -join ', ').Substring(0, [Math]::Min(200, ((Get-ChildItem $_.FullName -File).Name -join ', ').Length)))"
+            }
+
+          Write-Host "`n=== Checking expected publish directory ==="
+          if (Test-Path "${{ env.PUBLISHED_DIR }}") {
+            Write-Host "✅ Published directory exists at: ${{ env.PUBLISHED_DIR }}"
+            $fileCount = (Get-ChildItem "${{ env.PUBLISHED_DIR }}" -Recurse -File).Count
+            Write-Host "  Total files: $fileCount"
+            Write-Host "  First 10 files:"
+            Get-ChildItem "${{ env.PUBLISHED_DIR }}" -Recurse -File | Select-Object -First 10 | ForEach-Object {
+              Write-Host "    $($_.FullName)"
+            }
+          } else {
+            Write-Host "❌ Published directory NOT found at: ${{ env.PUBLISHED_DIR }}"
+          }
+
+          Write-Host "`n=== Searching for any 'published' directories ==="
+          Get-ChildItem "${{ github.workspace }}" -Directory -Filter "*publish*" -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Host "Found: $($_.FullName)"
+          }
+
+      - name: Check if publish succeeded
+        id: check-publish
+        shell: pwsh
+        run: |
+          if (Test-Path "${{ env.PUBLISHED_DIR }}") {
+            $fileCount = (Get-ChildItem "${{ env.PUBLISHED_DIR }}" -Recurse -File).Count
+            if ($fileCount -gt 0) {
+              Write-Host "✅ Found $fileCount files in publish directory"
+              echo "has_files=true" >> $env:GITHUB_OUTPUT
+            } else {
+              Write-Host "❌ Publish directory exists but is empty"
+              echo "has_files=false" >> $env:GITHUB_OUTPUT
+              exit 1
+            }
+          } else {
+            Write-Host "❌ Publish directory does not exist"
+            echo "has_files=false" >> $env:GITHUB_OUTPUT
+            exit 1
+          }
 
       - name: Upload artifact for deployment job
+        if: steps.check-publish.outputs.has_files == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: ASP-app
           path: ${{ env.PUBLISHED_DIR }}\**
 
-      - name: Upload MSBuild binlog (for debugging)
+      - name: Upload MSBuild logs (for debugging)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: msbuild-binlog
-          path: ${{ github.workspace }}\msbuild.binlog
+          name: msbuild-logs
+          path: |
+            ${{ github.workspace }}\msbuild.binlog
+            ${{ github.workspace }}\publish.log
 
   deploy:
     runs-on: windows-latest

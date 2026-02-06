@@ -108,6 +108,7 @@ jobs:
           /p:WebPublishMethod=FileSystem
           /p:PublishUrl="${{ env.PUBLISHED_DIR }}"
           /p:DeleteExistingFiles=true
+          /p:CreatePackageOnPublish=false
 
       - name: Verify published files
         shell: pwsh

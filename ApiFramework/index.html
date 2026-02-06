@@ -34,7 +34,7 @@
                 window.DD_RUM.init(config);
                 console.log('[Datadog] RUM initialized');
             } else {
-                console.warn('[Datadog] RUM not initialized - missing credentials in Web.config');
+                console.warn('[Datadog] RUM not initialized - missing environment credentials');
             }
         })
     </script>
@@ -516,12 +516,25 @@
         // Set Datadog RUM user context
         function setDatadogUser(user) {
             if (window.DD_RUM && user) {
-                window.DD_RUM.setUser({
+                const rumUser = {
                     id: user.userId,
-                    name: user.username,
-                    email: user.username + '@example.com'
-                });
-                console.log('✅ Datadog RUM user set:', user);
+                    name: user.username
+                };
+
+                // Add email if available (prefer actual email over generated one)
+                if (user.email) {
+                    rumUser.email = user.email;
+                } else {
+                    rumUser.email = user.username + '@example.com';
+                }
+
+                // Add full name if available as custom attribute
+                if (user.fullName) {
+                    rumUser.fullName = user.fullName;
+                }
+
+                window.DD_RUM.setUser(rumUser);
+                console.log('✅ Datadog RUM user set:', rumUser);
             }
         }
 
@@ -645,10 +658,20 @@
                 if (response.ok) {
                     alert('Profile updated successfully!');
 
-                    // Log RUM action
+                    // Update Datadog RUM user context with new profile data
                     if (window.DD_RUM) {
                         window.DD_RUM.addAction('update_profile', {
-                            userId: userId
+                            userId: userId,
+                            email: email,
+                            fullName: fullName
+                        });
+
+                        // Update RUM user with the new profile information
+                        setDatadogUser({
+                            userId: userId,
+                            username: currentUser.username,
+                            email: email,
+                            fullName: fullName
                         });
                     }
 

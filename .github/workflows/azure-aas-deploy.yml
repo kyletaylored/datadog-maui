@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -167,19 +167,10 @@ jobs:
 
       - name: Upload artifact for deployment job
         if: steps.check-publish.outputs.has_files == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ASP-app
           path: ${{ env.PUBLISHED_DIR }}\**
-
-      - name: Upload MSBuild logs (for debugging)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: msbuild-logs
-          path: |
-            ${{ github.workspace }}\msbuild.binlog
-            ${{ github.workspace }}\publish.log
 
   deploy:
     runs-on: windows-latest
@@ -190,7 +181,7 @@ jobs:
 
     steps:
       - name: Download artifact from build job
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: ASP-app
           path: ./deployment

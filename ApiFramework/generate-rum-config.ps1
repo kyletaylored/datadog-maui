@@ -26,7 +26,7 @@ window.DD_RUM_CONFIG = {
     applicationId: '',
     site: 'datadoghq.com',
     service: 'datadog-maui-web-framework',
-    env: 'local',
+    env: 'prod',
     version: '1.0.0',
     sessionSampleRate: 100,
     sessionReplaySampleRate: 100,
@@ -46,7 +46,7 @@ $rumConfig = @{
     clientToken = ''
     applicationId = ''
     site = 'datadoghq.com'
-    env = 'local'
+    env = 'prod'
 }
 
 Get-Content $envFile | ForEach-Object {

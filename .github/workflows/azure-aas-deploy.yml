@@ -15,6 +15,8 @@ on:
 env:
   AZURE_WEBAPP_NAME: 'datadog-maui-framework-api'
   SOLUTION_PATH: 'ApiFramework'
+  SOLUTION_FILE: 'DatadogMauiApi.Framework.sln'
+  PROJECT_FILE: 'DatadogMauiApi.Framework.csproj'
 
 jobs:
   build:
@@ -26,11 +28,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup MSBuild path
+      - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
       - name: Setup NuGet
-        uses: NuGet/setup-nuget@v1.0.5
+        uses: NuGet/setup-nuget@v2
 
       - name: Create .env file for build
         run: |
@@ -38,19 +40,32 @@ jobs:
           echo "DD_RUM_WEB_APPLICATION_ID=${{ secrets.DD_RUM_WEB_APPLICATION_ID }}" >> .env
         shell: bash
 
-      - name: Restore NuGet packages
+      - name: Restore NuGet packages (packages.config)
         working-directory: ./${{ env.SOLUTION_PATH }}
-        run: nuget restore DatadogMauiApi.Framework.sln
+        run: nuget restore ${{ env.SOLUTION_FILE }} -Verbosity detailed
 
-      - name: Publish to folder
+      - name: Build solution (Release)
         working-directory: ./${{ env.SOLUTION_PATH }}
-        run: msbuild /nologo /verbosity:m /t:Build /t:pipelinePreDeployCopyAllFilesToOneFolder /p:_PackageTempDir="${{ github.workspace }}\published\" /p:Configuration=Release
+        run: msbuild ${{ env.SOLUTION_FILE }} /m /t:Rebuild /p:Configuration=Release /p:Platform="Any CPU"
+
+      - name: Publish web project to folder
+        working-directory: ./${{ env.SOLUTION_PATH }}
+        run: >
+          msbuild ${{ env.PROJECT_FILE }}
+          /m
+          /t:Build
+          /p:Configuration=Release
+          /p:Platform="Any CPU"
+          /p:DeployOnBuild=true
+          /p:WebPublishMethod=FileSystem
+          /p:PublishUrl="${{ github.workspace }}\published"
+          /p:DeleteExistingFiles=true
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
           name: ASP-app
-          path: ${{ github.workspace }}/published/**
+          path: ${{ github.workspace }}\published\**
 
   deploy:
     runs-on: windows-latest

@@ -26,6 +26,8 @@ ARG BUILD_DATE
 # They are not secret and are safe to include in client-side code
 ARG DD_RUM_WEB_CLIENT_TOKEN
 ARG DD_RUM_WEB_APPLICATION_ID
+ARG DD_RUM_WEB_SERVICE
+ARG DD_SITE
 
 WORKDIR /home/site/wwwroot
 
@@ -49,6 +51,8 @@ COPY --from=build /app/publish .
 RUN if [ -f wwwroot/index.html ] && [ -n "$DD_RUM_WEB_CLIENT_TOKEN" ] && [ -n "$DD_RUM_WEB_APPLICATION_ID" ]; then \
     sed -i "s/PLACEHOLDER_CLIENT_TOKEN/${DD_RUM_WEB_CLIENT_TOKEN}/" wwwroot/index.html && \
     sed -i "s/PLACEHOLDER_APPLICATION_ID/${DD_RUM_WEB_APPLICATION_ID}/" wwwroot/index.html && \
+    sed -i "s/PLACEHOLDER_SITE/${DD_SITE}/" wwwroot/index.html && \
+    sed -i "s/PLACEHOLDER_SERVICE/${DD_RUM_WEB_SERVICE}/" wwwroot/index.html && \
     echo "✅ RUM credentials injected into index.html"; \
     else \
     echo "⚠️  Skipping RUM injection (file not found or credentials not provided)"; \

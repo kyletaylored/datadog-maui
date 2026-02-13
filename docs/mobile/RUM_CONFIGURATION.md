@@ -46,8 +46,8 @@ RUM credentials are **injected at Docker build time** from environment variables
     window.DD_RUM.init({
       clientToken: "PLACEHOLDER_CLIENT_TOKEN",
       applicationId: "PLACEHOLDER_APPLICATION_ID",
-      site: "datadoghq.com",
-      service: "datadog-maui-web",
+      site: "PLACEHOLDER_SITE",
+      service: "PLACEHOLDER_SERVICE",
       env: "local",
       version: "1.0.0",
       sessionSampleRate: 100,
@@ -66,6 +66,8 @@ RUM credentials are **injected at Docker build time** from environment variables
 RUN if [ -f wwwroot/index.html ] && [ -n "$DD_RUM_WEB_CLIENT_TOKEN" ] && [ -n "$DD_RUM_WEB_APPLICATION_ID" ]; then \
       sed -i "s/PLACEHOLDER_CLIENT_TOKEN/${DD_RUM_WEB_CLIENT_TOKEN}/" wwwroot/index.html && \
       sed -i "s/PLACEHOLDER_APPLICATION_ID/${DD_RUM_WEB_APPLICATION_ID}/" wwwroot/index.html && \
+      sed -i "s/PLACEHOLDER_SITE/${DD_SITE}/" wwwroot/index.html && \
+      sed -i "s/PLACEHOLDER_SERVICE/${DD_RUM_WEB_SERVICE}/" wwwroot/index.html && \
       echo "✅ RUM credentials injected into index.html"; \
     else \
       echo "⚠️  Skipping RUM injection (file not found or credentials not provided)"; \
@@ -85,6 +87,7 @@ api:
 #### 2. Android & iOS (Mobile Apps)
 
 Mobile apps use a sophisticated **3-tier credential loading system**:
+
 1. **Embedded Config File** (highest priority) - generated at build time
 2. **Environment Variables** - runtime environment
 3. **Default Placeholders** (lowest priority) - compile-time constants
@@ -194,7 +197,6 @@ public static class DatadogConfig
    ```
 
 2. **Get RUM credentials from Datadog:**
-
    - Go to [Datadog RUM Applications](https://app.datadoghq.com/rum/application/create)
    - Create three separate RUM applications:
      - **datadog-maui-web** (Browser, React)
@@ -256,6 +258,7 @@ cat MauiApp/Platforms/Android/datadog-rum.config
 ```
 
 **What happens during build:**
+
 1. MSBuild reads `DD_RUM_ANDROID_CLIENT_TOKEN` from environment
 2. `GenerateAndroidRumConfig` target creates `datadog-rum.config` file
 3. File is embedded as `EmbeddedResource` in assembly
@@ -282,6 +285,7 @@ cat MauiApp/Platforms/iOS/datadog-rum.config
 ```
 
 **Build output messages:**
+
 ```
 [MSBuild] 🐕 Generating Android RUM config file...
 [MSBuild]   Client Token: pub699a12...
@@ -289,6 +293,7 @@ cat MauiApp/Platforms/iOS/datadog-rum.config
 ```
 
 Or if credentials are missing:
+
 ```
 [MSBuild] ⚠️  No Android RUM credentials found! App will use placeholder values.
 ```
@@ -314,10 +319,12 @@ jobs:
         env:
           DD_RUM_WEB_CLIENT_TOKEN: ${{ secrets.DD_RUM_WEB_CLIENT_TOKEN }}
           DD_RUM_WEB_APPLICATION_ID: ${{ secrets.DD_RUM_WEB_APPLICATION_ID }}
+          DD_RUM_WEB_SERVICE: ${{ secrets.DD_RUM_WEB_SERVICE }}
           DD_RUM_ANDROID_CLIENT_TOKEN: ${{ secrets.DD_RUM_ANDROID_CLIENT_TOKEN }}
           DD_RUM_ANDROID_APPLICATION_ID: ${{ secrets.DD_RUM_ANDROID_APPLICATION_ID }}
           DD_RUM_IOS_CLIENT_TOKEN: ${{ secrets.DD_RUM_IOS_CLIENT_TOKEN }}
           DD_RUM_IOS_APPLICATION_ID: ${{ secrets.DD_RUM_IOS_APPLICATION_ID }}
+          DD_SITE: ${{ secrets.DD_SITE }}
         run: docker-compose build
 ```
 
@@ -325,6 +332,7 @@ jobs:
 
 - `DD_RUM_WEB_CLIENT_TOKEN`
 - `DD_RUM_WEB_APPLICATION_ID`
+- `DD_RUM_WEB_SERVICE`
 - `DD_RUM_ANDROID_CLIENT_TOKEN`
 - `DD_RUM_ANDROID_APPLICATION_ID`
 - `DD_RUM_IOS_CLIENT_TOKEN`
@@ -336,10 +344,12 @@ jobs:
 variables:
   DD_RUM_WEB_CLIENT_TOKEN: $DD_RUM_WEB_CLIENT_TOKEN
   DD_RUM_WEB_APPLICATION_ID: $DD_RUM_WEB_APPLICATION_ID
+  DD_RUM_WEB_SERVICE: $DD_RUM_WEB_SERVICE
   DD_RUM_ANDROID_CLIENT_TOKEN: $DD_RUM_ANDROID_CLIENT_TOKEN
   DD_RUM_ANDROID_APPLICATION_ID: $DD_RUM_ANDROID_APPLICATION_ID
   DD_RUM_IOS_CLIENT_TOKEN: $DD_RUM_IOS_CLIENT_TOKEN
   DD_RUM_IOS_APPLICATION_ID: $DD_RUM_IOS_APPLICATION_ID
+  DD_SITE: $DD_SITE
 
 build:
   script:
@@ -365,7 +375,6 @@ build:
    ```
 
 3. **Test in browser:**
-
    - Open http://localhost:5000
    - Open browser DevTools → Console
    - Look for Datadog RUM initialization messages
@@ -379,7 +388,6 @@ build:
 ### Mobile Apps
 
 1. **Check environment variables at runtime:**
-
    - Add debug logging in MauiProgram.cs:
 
    ```csharp
@@ -467,12 +475,14 @@ build:
 3. **Check build output:**
 
    Look for these messages during build:
+
    ```
    [MSBuild] 🐕 Generating Android RUM config file...
    [MSBuild]   Client Token: pub123...
    ```
 
    If you see this instead, credentials weren't found:
+
    ```
    [MSBuild] ⚠️  No Android RUM credentials found!
    ```
@@ -553,6 +563,7 @@ Create separate RUM applications for each platform/environment:
 The MAUI app uses MSBuild's extensibility to inject credentials at build time, solving several challenges:
 
 **Challenges:**
+
 - Mobile apps can't easily read `.env` files (file system restrictions)
 - Environment variables aren't reliably available in mobile runtimes
 - Hardcoded credentials in source code are insecure
@@ -573,6 +584,7 @@ The MAUI app uses MSBuild's extensibility to inject credentials at build time, s
 ```
 
 MSBuild properties can come from:
+
 - Command line: `dotnet build -p:AndroidClientToken=abc123`
 - Environment variables: `DD_RUM_ANDROID_CLIENT_TOKEN`
 - MSBuild property files
@@ -580,6 +592,7 @@ MSBuild properties can come from:
 #### Step 2: Config File Generation (Build-Time)
 
 **Android Target** (lines 69-83):
+
 ```xml
 <Target Name="GenerateAndroidRumConfig" BeforeTargets="BeforeBuild" Condition="'$(TargetFramework)' == 'net10.0-android'">
   <WriteLinesToFile
@@ -591,6 +604,7 @@ MSBuild properties can come from:
 ```
 
 **Key features:**
+
 - Runs **before** compilation (`BeforeTargets="BeforeBuild"`)
 - Only for Android (`Condition="'$(TargetFramework)' == 'net10.0-android'"`)
 - Creates `Platforms/Android/datadog-rum.config` with `KEY=VALUE` format
@@ -601,6 +615,7 @@ MSBuild properties can come from:
 #### Step 3: Embed as Resource (Build-Time)
 
 **Config File Embedding** (lines 101-109):
+
 ```xml
 <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-android'">
   <EmbeddedResource Include="Platforms/Android/datadog-rum.config" Condition="Exists('Platforms/Android/datadog-rum.config')" />
@@ -608,6 +623,7 @@ MSBuild properties can come from:
 ```
 
 The config file becomes an **embedded manifest resource** in the compiled assembly with the name:
+
 - Android: `DatadogMauiApp.Platforms.Android.datadog-rum.config`
 - iOS: `DatadogMauiApp.Platforms.iOS.datadog-rum.config`
 
@@ -650,6 +666,7 @@ private static Dictionary<string, string> LoadCredentials()
 ```
 
 **3-Tier Fallback** (lines 75-96):
+
 ```csharp
 public static string ClientToken
 {
@@ -676,17 +693,20 @@ public static string ClientToken
 ### Why This Approach?
 
 **Compared to environment variables only:**
+
 - ✅ Works in sandboxed mobile environments
 - ✅ No runtime environment variable support needed
 - ✅ Credentials embedded in binary (secure, can't be modified)
 - ✅ Platform-specific at compile time (no runtime branching)
 
 **Compared to hardcoded credentials:**
+
 - ✅ No credentials in source code
 - ✅ Different values per environment (dev/staging/prod)
 - ✅ CI/CD pipeline integration
 
 **Compared to config files shipped with app:**
+
 - ✅ No file system permissions needed
 - ✅ Can't be modified after compilation
 - ✅ Embedded resources always available

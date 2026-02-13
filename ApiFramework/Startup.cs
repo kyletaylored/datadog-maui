@@ -42,7 +42,7 @@ namespace DatadogMauiApi.Framework
 
             config.Routes.MapHttpRoute(
                 name: "DefaultApi",
-                routeTemplate: "{controller}/{action}/{id}",
+                routeTemplate: "{controller}/{id}",
                 defaults: new { id = RouteParameter.Optional }
             );
 

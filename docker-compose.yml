@@ -41,6 +41,7 @@ services:
         - BUILD_DATE=${BUILD_DATE:-2025-12-31}
         - DD_RUM_WEB_CLIENT_TOKEN=${DD_RUM_WEB_CLIENT_TOKEN}
         - DD_RUM_WEB_APPLICATION_ID=${DD_RUM_WEB_APPLICATION_ID}
+        - DD_RUM_WEB_SERVICE=${DD_RUM_WEB_SERVICE}
     ports:
       - "5000:8080"
     labels:
@@ -53,6 +54,7 @@ services:
       - ASPNETCORE_URLS=http://+:8080
       - DD_RUM_WEB_CLIENT_TOKEN=${DD_RUM_WEB_CLIENT_TOKEN}
       - DD_RUM_WEB_APPLICATION_ID=${DD_RUM_WEB_APPLICATION_ID}
+      - DD_RUM_WEB_SERVICE=${DD_RUM_WEB_SERVICE}
       # Datadog Agent connection
       - DD_AGENT_HOST=datadog-agent
       - DD_TRACE_AGENT_PORT=8126

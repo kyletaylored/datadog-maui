@@ -96,6 +96,7 @@ az webapp config appsettings set \
         DD_PROFILING_ENABLED="false" \
         DD_RUM_WEB_CLIENT_TOKEN="${DD_RUM_WEB_CLIENT_TOKEN:-}" \
         DD_RUM_WEB_APPLICATION_ID="${DD_RUM_WEB_APPLICATION_ID:-}" \
+        DD_RUM_WEB_SERVICE="${DD_RUM_WEB_SERVICE:-datadog-maui-api}" \
         ASPNETCORE_ENVIRONMENT="Production" \
         WEBSITE_RUN_FROM_PACKAGE="1" \
     --output none

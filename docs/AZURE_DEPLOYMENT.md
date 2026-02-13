@@ -203,6 +203,7 @@ Required environment variables for Azure App Service:
 | `DD_TRACE_SAMPLE_RATE`       | Trace sample rate (0-1)   | `1.0`              |
 | `DD_RUM_WEB_CLIENT_TOKEN`    | RUM client token (public) | `pub123...`        |
 | `DD_RUM_WEB_APPLICATION_ID`  | RUM application ID        | `abc-123...`       |
+| `DD_RUM_WEB_SERVICE`         | RUM application ID        | `datadog-maui-web` |
 
 ## Post-Deployment Verification
 

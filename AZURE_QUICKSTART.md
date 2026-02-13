@@ -44,11 +44,12 @@ brew install azure-cli
 export DD_API_KEY="your-datadog-api-key"
 export DD_RUM_WEB_CLIENT_TOKEN="your-rum-client-token"
 export DD_RUM_WEB_APPLICATION_ID="your-rum-app-id"
+export DD_RUM_WEB_SERVICE="your-rum-service-name"
 
 # Optional customization
 export AZURE_APP_NAME="my-custom-name"
 export AZURE_RESOURCE_GROUP="my-rg"
-export AZURE_LOCATION="eastus"
+export AZURE_LOCATION="centralus"
 ```
 
 ### 3. Deploy
@@ -119,6 +120,7 @@ DD_TRACE_SAMPLE_RATE          # 1.0 (100%)
 DD_TRACE_PROPAGATION_STYLE    # datadog,tracecontext
 DD_RUM_WEB_CLIENT_TOKEN       # Your RUM token
 DD_RUM_WEB_APPLICATION_ID     # Your RUM app ID
+DD_RUM_WEB_SERVICE            # Your RUM service name
 ```
 
 ## Testing Your Deployment

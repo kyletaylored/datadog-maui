@@ -6,12 +6,12 @@ Complete guide for deploying the Datadog MAUI API to Azure using various hosting
 
 Choose your Azure deployment option:
 
-| Option | Best For | Cost | Complexity | Code Changes |
-|--------|----------|------|------------|--------------|
-| **Container Apps** | Modern apps, microservices | $5-50/mo | Low | None |
-| **App Service** | Traditional web apps | $30-100/mo | Low | None |
-| **Functions** | Serverless, event-driven | $1-145/mo | Medium | Required |
-| **AKS** | Enterprise, multi-service | $100+/mo | High | None |
+| Option             | Best For                   | Cost       | Complexity | Code Changes |
+| ------------------ | -------------------------- | ---------- | ---------- | ------------ |
+| **Container Apps** | Modern apps, microservices | $5-50/mo   | Low        | None         |
+| **App Service**    | Traditional web apps       | $30-100/mo | Low        | None         |
+| **Functions**      | Serverless, event-driven   | $1-145/mo  | Medium     | Required     |
+| **AKS**            | Enterprise, multi-service  | $100+/mo   | High       | None         |
 
 **Recommended**: Start with **Azure Container Apps** for best balance of features, cost, and simplicity.
 
@@ -27,6 +27,7 @@ Choose your Azure deployment option:
 Deploy the current API as-is with no code changes.
 
 ### Benefits
+
 - Scale to zero (save money)
 - Automatic HTTPS
 - Built-in load balancing
@@ -78,6 +79,7 @@ az containerapp create \
 ```
 
 ### Cost Estimate
+
 - Dev/Test: ~$5-10/month (scale to zero)
 - Production: ~$30-50/month (always available)
 
@@ -86,6 +88,7 @@ az containerapp create \
 Traditional app hosting with Windows or Linux support.
 
 ### Benefits
+
 - Simple deployment model
 - Easy configuration
 - Built-in monitoring
@@ -150,6 +153,7 @@ az webapp deployment source config-zip \
 ```
 
 ### Cost Estimate
+
 - Basic (B1): ~$13/month
 - Standard (S1): ~$70/month
 
@@ -160,18 +164,21 @@ Serverless deployment with per-execution billing. **Requires code changes**.
 See [AZURE_FUNCTIONS.md](AZURE_FUNCTIONS.md) for full migration guide.
 
 ### Benefits
+
 - Pay per execution
 - Automatic scaling
 - Integrated triggers
 - Event-driven architecture
 
 ### When to Use
+
 - Low-traffic APIs
 - Event-driven workloads
 - Cost-sensitive projects
 - Batch processing
 
 ### Cost Estimate
+
 - Consumption: ~$1-2/month (100k requests)
 - Premium: ~$145/month (always-on)
 
@@ -199,16 +206,20 @@ DD_TRACE_PROPAGATION_STYLE=datadog,tracecontext
 # RUM (Browser Monitoring)
 DD_RUM_WEB_CLIENT_TOKEN=<your-rum-token>
 DD_RUM_WEB_APPLICATION_ID=<your-app-id>
+DD_RUM_WEB_SERVICE=<your-service-name>
+
 ```
 
 ### Agent Configuration
 
 For Container Apps and AKS, you can:
+
 1. Use Datadog's serverless monitoring (agentless)
 2. Deploy sidecar agent
 3. Use DaemonSet (AKS only)
 
 For App Service:
+
 - Use Datadog Extension (Windows)
 - Use Docker agent sidecar (Linux)
 
@@ -247,18 +258,21 @@ private const string BaseUrl = "https://your-app.azurecontainerapps.io";
 ## Troubleshooting
 
 ### No Traces in Datadog
+
 - Verify `DD_API_KEY` is set correctly
 - Check `DD_TRACE_ENABLED=true`
 - Ensure app has internet access
 - Verify `DD_SITE` matches your Datadog region
 
 ### App Won't Start
+
 - Check application logs: `az containerapp logs show`
 - Verify environment variables
 - Check container health probes
 - Review resource limits
 
 ### CORS Errors
+
 - Configure CORS in app settings
 - Add allowed origins
 - Check OPTIONS preflight handling

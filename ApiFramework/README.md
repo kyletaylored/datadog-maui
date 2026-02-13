@@ -4,14 +4,14 @@ This is the .NET Framework 4.8 version of the Datadog MAUI API, designed for cus
 
 ## Key Differences from .NET Core Version
 
-| Feature | .NET Core 9.0 (`Api/`) | .NET Framework 4.8 (`ApiFramework/`) |
-|---------|------------------------|-------------------------------------|
-| **API Style** | Minimal APIs | Web API Controllers |
-| **Hosting** | Kestrel (cross-platform) | IIS (Windows only) |
-| **Configuration** | appsettings.json | Web.config |
-| **Dependency Injection** | Built-in | Manual (no DI container) |
-| **Datadog Module** | Automatic via environment | HTTP Module in Web.config |
-| **Deployment** | Docker, Azure App Service (Linux/Windows) | IIS, Azure App Service (Windows only) |
+| Feature                  | .NET Core 9.0 (`Api/`)                    | .NET Framework 4.8 (`ApiFramework/`)  |
+| ------------------------ | ----------------------------------------- | ------------------------------------- |
+| **API Style**            | Minimal APIs                              | Web API Controllers                   |
+| **Hosting**              | Kestrel (cross-platform)                  | IIS (Windows only)                    |
+| **Configuration**        | appsettings.json                          | Web.config                            |
+| **Dependency Injection** | Built-in                                  | Manual (no DI container)              |
+| **Datadog Module**       | Automatic via environment                 | HTTP Module in Web.config             |
+| **Deployment**           | Docker, Azure App Service (Linux/Windows) | IIS, Azure App Service (Windows only) |
 
 ## Project Structure
 
@@ -75,9 +75,11 @@ msbuild DatadogMauiApi.Framework.csproj /p:Configuration=Release
 RUM configuration is automatically generated from the root `.env` file during build:
 
 1. Edit `.env` in the project root:
+
    ```bash
    DD_RUM_WEB_CLIENT_TOKEN=pub37e71f97f5364780bccc640fd9bcf94a
    DD_RUM_WEB_APPLICATION_ID=6af6b082-8fc8-4bba-a5e1-587342360624
+   DD_RUM_WEB_SERVICE="datadog-maui-api-framework"
    DD_SITE=datadoghq.com
    DD_ENV=local
    ```
@@ -86,6 +88,7 @@ RUM configuration is automatically generated from the root `.env` file during bu
 3. The dashboard at `http://localhost:50000` will use these credentials
 
 **How it works:**
+
 - MSBuild pre-build event (line 126-129 in `.csproj`) runs `generate-rum-config.ps1`
 - PowerShell script reads `../.env` and generates `rum-config.js`
 - `index.html` loads this config file for RUM initialization
@@ -117,9 +120,11 @@ Edit `Web.config` to configure Datadog backend tracing:
    - Run `datadog-dotnet-apm-{version}-x64.msi`
 
 2. **Launch Visual Studio with Datadog environment:**
+
    ```powershell
    .\ApiFramework\launch-vs-with-datadog.bat
    ```
+
    This automatically detects your Visual Studio installation and launches it with all Datadog environment variables pre-configured.
 
 3. **Press F5 to debug** - Datadog APM will work automatically!
@@ -139,6 +144,7 @@ For troubleshooting, see [../docs/backend/IIS_EXPRESS_DATADOG_SETUP.md](../docs/
 **Full IIS (Production):**
 
 For production IIS, set environment variables on the Application Pool:
+
 ```powershell
 # In IIS Manager → Application Pools → [YourAppPool] → Advanced Settings → Environment Variables
 COR_ENABLE_PROFILING=1
@@ -154,6 +160,7 @@ This project supports **both** traditional ASP.NET pipeline (Global.asax) and OW
 **Default**: Uses Global.asax (traditional ASP.NET pipeline)
 
 **To enable OWIN mode** (for replicating OWIN-based customer issues):
+
 1. Add `USE_OWIN` to **Project Properties → Build → Conditional compilation symbols**
 2. Rebuild the project
 3. OWIN middleware pipeline will handle requests instead
@@ -164,16 +171,16 @@ See [OWIN_SETUP.md](OWIN_SETUP.md) for detailed configuration and troubleshootin
 
 All endpoints match the .NET Core version:
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/config` | Configuration |
-| POST | `/auth/login` | User login |
-| POST | `/auth/logout` | User logout |
-| GET | `/profile` | Get user profile (requires auth) |
-| PUT | `/profile` | Update user profile (requires auth) |
-| POST | `/data` | Submit data |
-| GET | `/data` | Get all data |
+| Method | Endpoint       | Description                         |
+| ------ | -------------- | ----------------------------------- |
+| GET    | `/health`      | Health check                        |
+| GET    | `/config`      | Configuration                       |
+| POST   | `/auth/login`  | User login                          |
+| POST   | `/auth/logout` | User logout                         |
+| GET    | `/profile`     | Get user profile (requires auth)    |
+| PUT    | `/profile`     | Update user profile (requires auth) |
+| POST   | `/data`        | Submit data                         |
+| GET    | `/data`        | Get all data                        |
 
 ## Running Locally
 
@@ -194,6 +201,7 @@ All endpoints match the .NET Core version:
 
 **If you encounter permissions errors (500.19):**
 Run the troubleshooting script from the project root:
+
 ```powershell
 .\scripts\troubleshoot-iis.ps1 -FixAll
 ```
@@ -209,6 +217,7 @@ This will automatically fix common IIS issues including permissions, physical pa
    - OS: Windows
 
 2. **Configure Application Settings**:
+
    ```
    DD_API_KEY = your-api-key
    DD_SITE = datadoghq.com
@@ -234,6 +243,7 @@ This will automatically fix common IIS issues including permissions, physical pa
 ### Automatic Instrumentation
 
 The Datadog HTTP Module (`Datadog.Trace.AspNet`) automatically:
+
 - ✅ Captures HTTP requests and responses
 - ✅ Creates spans for each request
 - ✅ Adds distributed tracing headers
@@ -256,6 +266,7 @@ if (activeScope != null)
 ### Custom Span Attributes
 
 All custom attributes are prefixed with `custom.` for easy filtering:
+
 - `custom.user.id`
 - `custom.authenticated`
 - `custom.operation.type`
@@ -297,6 +308,7 @@ Invoke-RestMethod -Uri http://localhost:50000/data `
 ### Module not found errors
 
 Install Datadog NuGet packages:
+
 ```powershell
 Install-Package Datadog.Trace
 Install-Package Datadog.Trace.AspNet
@@ -305,6 +317,7 @@ Install-Package Datadog.Trace.AspNet
 ### CORS issues
 
 CORS is configured in `WebApiConfig.cs`. Modify as needed:
+
 ```csharp
 var cors = new EnableCorsAttribute("https://yourdomain.com", "*", "*");
 config.EnableCors(cors);
@@ -320,11 +333,13 @@ config.EnableCors(cors);
 ### IIS Permissions or Configuration Issues
 
 Run the comprehensive troubleshooting script:
+
 ```powershell
 .\scripts\troubleshoot-iis.ps1 -FixAll
 ```
 
 This will check and fix:
+
 - Physical path configuration
 - File permissions (IIS_IUSRS, app pool identity)
 - Missing files
@@ -334,12 +349,14 @@ This will check and fix:
 ## Comparison with .NET Core
 
 ### Advantages of .NET Framework 4.8
+
 - ✅ Familiar to enterprise .NET developers
 - ✅ Compatible with legacy .NET Framework libraries
 - ✅ Established in many enterprises
 - ✅ Full Windows integration
 
 ### Advantages of .NET Core 9.0
+
 - ✅ Cross-platform (Linux, macOS, Windows)
 - ✅ Better performance (2-3x faster)
 - ✅ Modern C# features
@@ -354,6 +371,7 @@ For scalable Datadog APM instrumentation patterns, including OWIN vs Global.asax
 **[Datadog APM Patterns Documentation](../docs/backend/DATADOG_PATTERNS.md)**
 
 This guide covers:
+
 - Action filter-based span caching for better performance
 - Base controller pattern for consistent span access
 - OWIN vs Global.asax span hierarchy differences
@@ -369,6 +387,7 @@ This guide covers:
 ## Support
 
 For issues specific to this .NET Framework implementation, please check:
+
 - Project documentation in `docs/`
 - Compare with .NET Core version in `Api/`
 - Azure deployment guide in `docs/AZURE_DEPLOYMENT.md`

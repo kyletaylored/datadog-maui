@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'Api/**'
-      - '.github/workflows/azure-deploy.yml'
+      - '.github/workflows/azure-aca-deploy.yml'
   workflow_dispatch:
 
 env:

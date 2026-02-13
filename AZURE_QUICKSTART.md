@@ -7,16 +7,19 @@ Your Datadog MAUI API is now ready to deploy to Azure App Service on Windows! He
 ## Files Created
 
 ### Deployment Scripts
+
 - `scripts/deploy-azure.sh` - Automated deployment script (Bash)
 - `scripts/install-datadog-windows.ps1` - Datadog tracer installation for Windows
-- `.github/workflows/azure-deploy.yml` - GitHub Actions CI/CD workflow
+- `.github/workflows/azure-aca-deploy.yml` - GitHub Actions CI/CD workflow
 - `.deployment` - Azure project configuration
 
 ### Configuration Files
+
 - `Api/web.config` - IIS/ASP.NET Core configuration for Windows
 - `docs/AZURE_DEPLOYMENT.md` - Comprehensive deployment guide
 
 ### Makefile Commands
+
 ```bash
 make azure-deploy    # Deploy to Azure
 make azure-logs      # View logs
@@ -27,6 +30,7 @@ make azure-health    # Test deployment
 ## Quick Deployment (3 Steps)
 
 ### 1. Install Azure CLI
+
 ```bash
 # macOS
 brew install azure-cli
@@ -35,6 +39,7 @@ brew install azure-cli
 ```
 
 ### 2. Set Environment Variables
+
 ```bash
 export DD_API_KEY="your-datadog-api-key"
 export DD_RUM_WEB_CLIENT_TOKEN="your-rum-client-token"
@@ -47,6 +52,7 @@ export AZURE_LOCATION="eastus"
 ```
 
 ### 3. Deploy
+
 ```bash
 # Login to Azure (first time only)
 az login
@@ -77,12 +83,14 @@ That's it! Your API will be available at:
 The deployment includes automatic APM configuration, but for full functionality on Windows, you have two options:
 
 ### Option A: Azure Extension (Recommended - Easiest)
+
 1. Go to Azure Portal → Your App Service → Extensions
 2. Click "Add" → Search for "Datadog APM"
 3. Install the extension
 4. Done! Automatic instrumentation enabled
 
 ### Option B: Manual Installation
+
 The deployment script sets up the base configuration. For Windows-specific tracer:
 
 ```bash
@@ -134,6 +142,7 @@ make azure-logs
 To enable automated deployments:
 
 1. **Get Publish Profile**:
+
    ```bash
    az webapp deployment list-publishing-profiles \
      --name your-app-name \
@@ -147,7 +156,8 @@ To enable automated deployments:
    - Paste contents of `publish-profile.xml`
 
 3. **Update workflow file**:
-   Edit `.github/workflows/azure-deploy.yml`:
+   Edit `.github/workflows/azure-aca-deploy.yml`:
+
    ```yaml
    env:
      AZURE_WEBAPP_NAME: your-app-name
@@ -158,14 +168,17 @@ To enable automated deployments:
 ## Pricing
 
 Default configuration uses **B1 tier** (~$13/month):
+
 - 1 core, 1.75 GB RAM
 - Perfect for development/staging
 
 For production, consider:
+
 - **S1**: ~$70/month (1 core, 1.75 GB, custom domains, auto-scale)
 - **P1V2**: ~$80/month (1 core, 3.5 GB, better performance)
 
 Change tier:
+
 ```bash
 az appservice plan update \
   --name datadog-maui-plan \
@@ -192,12 +205,14 @@ After deployment, check:
 ## Troubleshooting
 
 ### "Resource group not found"
+
 ```bash
 # Create manually
 az group create --name datadog-maui-rg --location eastus
 ```
 
 ### "App name already taken"
+
 ```bash
 # Use custom name
 export AZURE_APP_NAME="datadog-maui-api-$(whoami)"
@@ -205,12 +220,14 @@ make azure-deploy
 ```
 
 ### "Not logged in to Azure"
+
 ```bash
 az login
 az account show
 ```
 
 ### "Deployment failed"
+
 ```bash
 # Check logs
 make azure-logs
@@ -220,6 +237,7 @@ make azure-logs
 ```
 
 ### "No traces in Datadog"
+
 1. Check `DD_API_KEY` is set correctly
 2. Verify Datadog extension installed (Azure Portal → Extensions)
 3. Check logs for tracer initialization
@@ -245,6 +263,7 @@ make azure-logs
 ## Support
 
 Need help? Check:
+
 1. [Azure App Service docs](https://docs.microsoft.com/en-us/azure/app-service/)
 2. [Datadog Azure integration](https://docs.datadoghq.com/integrations/azure/)
 3. Project documentation in `docs/` folder

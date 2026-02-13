@@ -34,6 +34,7 @@ export AZURE_SKU="B1"  # Basic tier
 ```
 
 The script will:
+
 - Create Azure resources (resource group, app service plan, app service)
 - Configure Datadog environment variables
 - Build and publish the .NET API
@@ -43,11 +44,13 @@ The script will:
 ### Option 2: Manual Deployment via Azure CLI
 
 1. **Login to Azure**:
+
    ```bash
    az login
    ```
 
 2. **Create Resource Group**:
+
    ```bash
    az group create \
      --name datadog-maui-rg \
@@ -55,6 +58,7 @@ The script will:
    ```
 
 3. **Create App Service Plan** (Windows):
+
    ```bash
    az appservice plan create \
      --name datadog-maui-plan \
@@ -65,6 +69,7 @@ The script will:
    ```
 
 4. **Create App Service**:
+
    ```bash
    az webapp create \
      --name datadog-maui-api \
@@ -74,6 +79,7 @@ The script will:
    ```
 
 5. **Configure App Settings**:
+
    ```bash
    az webapp config appsettings set \
      --name datadog-maui-api \
@@ -109,6 +115,7 @@ The script will:
 For automated deployments on every push to main:
 
 1. **Get Publish Profile**:
+
    ```bash
    az webapp deployment list-publishing-profiles \
      --name datadog-maui-api \
@@ -122,7 +129,8 @@ For automated deployments on every push to main:
    - Paste the XML content from step 1
 
 3. **Update Workflow**:
-   Edit `.github/workflows/azure-deploy.yml` and set:
+   Edit `.github/workflows/azure-aca-deploy.yml` and set:
+
    ```yaml
    env:
      AZURE_WEBAPP_NAME: your-app-service-name
@@ -182,28 +190,30 @@ See: [Datadog Azure App Service Extension](https://docs.datadoghq.com/serverless
 
 Required environment variables for Azure App Service:
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DD_API_KEY` | Datadog API key | `abc123...` |
-| `DD_SITE` | Datadog site | `datadoghq.com` |
-| `DD_ENV` | Environment name | `production` |
-| `DD_SERVICE` | Service name | `datadog-maui-api` |
-| `DD_VERSION` | Service version | `1.0.0` |
-| `DD_TRACE_ENABLED` | Enable APM tracing | `true` |
-| `DD_RUNTIME_METRICS_ENABLED` | Enable runtime metrics | `true` |
-| `DD_LOGS_INJECTION` | Enable log correlation | `true` |
-| `DD_TRACE_SAMPLE_RATE` | Trace sample rate (0-1) | `1.0` |
-| `DD_RUM_WEB_CLIENT_TOKEN` | RUM client token (public) | `pub123...` |
-| `DD_RUM_WEB_APPLICATION_ID` | RUM application ID | `abc-123...` |
+| Variable                     | Description               | Example            |
+| ---------------------------- | ------------------------- | ------------------ |
+| `DD_API_KEY`                 | Datadog API key           | `abc123...`        |
+| `DD_SITE`                    | Datadog site              | `datadoghq.com`    |
+| `DD_ENV`                     | Environment name          | `production`       |
+| `DD_SERVICE`                 | Service name              | `datadog-maui-api` |
+| `DD_VERSION`                 | Service version           | `1.0.0`            |
+| `DD_TRACE_ENABLED`           | Enable APM tracing        | `true`             |
+| `DD_RUNTIME_METRICS_ENABLED` | Enable runtime metrics    | `true`             |
+| `DD_LOGS_INJECTION`          | Enable log correlation    | `true`             |
+| `DD_TRACE_SAMPLE_RATE`       | Trace sample rate (0-1)   | `1.0`              |
+| `DD_RUM_WEB_CLIENT_TOKEN`    | RUM client token (public) | `pub123...`        |
+| `DD_RUM_WEB_APPLICATION_ID`  | RUM application ID        | `abc-123...`       |
 
 ## Post-Deployment Verification
 
 1. **Health Check**:
+
    ```bash
    curl https://your-app-name.azurewebsites.net/health
    ```
 
 2. **View Logs**:
+
    ```bash
    az webapp log tail \
      --name datadog-maui-api \
@@ -216,6 +226,7 @@ Required environment variables for Azure App Service:
    - Logs: https://app.datadoghq.com/logs
 
 4. **Test Endpoints**:
+
    ```bash
    # Health check
    curl https://your-app-name.azurewebsites.net/health
@@ -246,6 +257,7 @@ Required environment variables for Azure App Service:
 ### CORS Issues
 
 Configure CORS in Azure App Service:
+
 ```bash
 az webapp cors add \
   --name datadog-maui-api \
@@ -258,6 +270,7 @@ az webapp cors add \
 ### Vertical Scaling (Scale Up)
 
 Change to a more powerful tier:
+
 ```bash
 az appservice plan update \
   --name datadog-maui-plan \
@@ -268,6 +281,7 @@ az appservice plan update \
 ### Horizontal Scaling (Scale Out)
 
 Add more instances:
+
 ```bash
 az appservice plan update \
   --name datadog-maui-plan \
@@ -284,6 +298,7 @@ az appservice plan update \
 ## Security Best Practices
 
 1. **Use Azure Key Vault** for secrets:
+
    ```bash
    # Store DD_API_KEY in Key Vault
    az keyvault secret set \
@@ -293,6 +308,7 @@ az appservice plan update \
    ```
 
 2. **Enable HTTPS only**:
+
    ```bash
    az webapp update \
      --name datadog-maui-api \

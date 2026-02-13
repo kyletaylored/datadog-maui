@@ -11,6 +11,7 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: 'datadog-maui-api-framework'
+  RUM_SERVICE: 'datadog-maui-web-framework'
   SOLUTION_PATH: 'ApiFramework'
   SOLUTION_FILE: 'DatadogMauiApi.Framework.sln'
   PROJECT_FILE: 'DatadogMauiApi.Framework.csproj'
@@ -36,7 +37,7 @@ jobs:
         run: |
           echo "DD_RUM_WEB_CLIENT_TOKEN=${{ secrets.DD_RUM_WEB_CLIENT_TOKEN }}" > .env
           echo "DD_RUM_WEB_APPLICATION_ID=${{ secrets.DD_RUM_WEB_APPLICATION_ID }}" >> .env
-          echo "DD_RUM_WEB_SERVICE=${{ secrets.DD_RUM_WEB_SERVICE }}" >> .env
+          echo "DD_RUM_WEB_SERVICE=${{ env.RUM_SERVICE }}" >> .env
           echo "DD_SITE=${{ secrets.DD_SITE }}" >> .env
           echo "DD_ENV=${{ secrets.DD_ENV }}" >> .env
         shell: bash

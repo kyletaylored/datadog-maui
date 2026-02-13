@@ -96,6 +96,7 @@
   <ItemGroup>
     <Content Include="Web.config" />
     <Content Include="index.html" />
+    <Content Include="app.js" />
     <Content Include="favicon.png" Condition="Exists('$(ProjectDir)favicon.png')" />
     <!-- rum-config.js is generated during build - include it with condition so it's published -->
     <Content Include="rum-config.js" Condition="Exists('$(ProjectDir)rum-config.js')" />

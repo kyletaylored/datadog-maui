@@ -21,6 +21,8 @@ builder.Logging.AddJsonConsole(options =>
 // Add services to the container.
 builder.Services.AddOpenApi();
 builder.Services.AddSingleton<SessionManager>();
+builder.Services.AddSingleton<ProductStore>();
+builder.Services.AddSingleton<CartStore>();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -385,6 +387,446 @@ app.MapGet("/data", (SessionManager sessionManager, ILogger<Program> logger, Htt
     return Results.Ok(dataStore.ToList());
 })
 .WithName("GetAllData");
+
+// Products API Endpoints
+app.MapGet("/products", (ProductStore store, HttpContext context, ILogger<Program> logger, int? limit, string? sort) =>
+{
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "GET /products";
+        activeScope.Span.SetTag("custom.operation.type", "products_list");
+        activeScope.Span.SetTag("custom.query.limit", limit?.ToString() ?? "none");
+        activeScope.Span.SetTag("custom.query.sort", sort ?? "asc");
+    }
+
+    var products = store.GetAll();
+
+    // Apply sorting
+    if (sort == "desc")
+        products = products.OrderByDescending(p => p.Id);
+
+    // Apply limit
+    if (limit.HasValue && limit > 0)
+        products = products.Take(limit.Value);
+
+    var result = products.ToList();
+
+    if (activeScope != null)
+        activeScope.Span.SetTag("custom.result.count", result.Count.ToString());
+
+    logger.LogInformation("[Products] Retrieved {Count} products", result.Count);
+    return Results.Ok(result);
+})
+.WithName("GetProducts");
+
+app.MapGet("/products/{id:int}", (int id, ProductStore store, HttpContext context, ILogger<Program> logger) =>
+{
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "GET /products/{id}";
+        activeScope.Span.SetTag("custom.operation.type", "product_get");
+        activeScope.Span.SetTag("custom.product.id", id.ToString());
+    }
+
+    var product = store.GetById(id);
+
+    if (product == null)
+    {
+        if (activeScope != null)
+            activeScope.Span.SetTag("custom.product.found", "false");
+        logger.LogWarning("[Products] Product not found: {ProductId}", id);
+        return Results.NotFound(new { message = "Product not found" });
+    }
+
+    if (activeScope != null)
+        activeScope.Span.SetTag("custom.product.found", "true");
+
+    logger.LogInformation("[Products] Retrieved product: {ProductId}", id);
+    return Results.Ok(product);
+})
+.WithName("GetProduct");
+
+app.MapGet("/products/categories", (ProductStore store, HttpContext context, ILogger<Program> logger) =>
+{
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "GET /products/categories";
+        activeScope.Span.SetTag("custom.operation.type", "categories_list");
+    }
+
+    var categories = store.GetCategories().ToList();
+
+    if (activeScope != null)
+        activeScope.Span.SetTag("custom.result.count", categories.Count.ToString());
+
+    logger.LogInformation("[Products] Retrieved {Count} categories", categories.Count);
+    return Results.Ok(categories);
+})
+.WithName("GetCategories");
+
+app.MapGet("/products/category/{category}", (string category, ProductStore store, HttpContext context,
+    ILogger<Program> logger, int? limit, string? sort) =>
+{
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "GET /products/category/{category}";
+        activeScope.Span.SetTag("custom.operation.type", "products_by_category");
+        activeScope.Span.SetTag("custom.category", category);
+        activeScope.Span.SetTag("custom.query.limit", limit?.ToString() ?? "none");
+        activeScope.Span.SetTag("custom.query.sort", sort ?? "asc");
+    }
+
+    var products = store.GetByCategory(category);
+
+    // Apply sorting
+    if (sort == "desc")
+        products = products.OrderByDescending(p => p.Id);
+
+    // Apply limit
+    if (limit.HasValue && limit > 0)
+        products = products.Take(limit.Value);
+
+    var result = products.ToList();
+
+    if (activeScope != null)
+        activeScope.Span.SetTag("custom.result.count", result.Count.ToString());
+
+    logger.LogInformation("[Products] Retrieved {Count} products in category: {Category}", result.Count, category);
+    return Results.Ok(result);
+})
+.WithName("GetProductsByCategory");
+
+app.MapPost("/products", (Product product, ProductStore store, SessionManager sessionManager,
+    HttpContext context, ILogger<Program> logger) =>
+{
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "POST /products";
+        activeScope.Span.SetTag("custom.operation.type", "product_create");
+        activeScope.Span.SetTag("custom.product.category", product.Category);
+    }
+
+    // Optional: Check authentication
+    var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Replace("Bearer ", "");
+    if (!string.IsNullOrEmpty(token))
+    {
+        var (isValid, userId) = sessionManager.ValidateSession(token);
+        if (isValid && userId != null && activeScope != null)
+        {
+            activeScope.Span.SetTag("custom.user.id", userId);
+            activeScope.Span.SetTag("custom.authenticated", "true");
+        }
+    }
+
+    var created = store.Add(product);
+
+    if (activeScope != null)
+        activeScope.Span.SetTag("custom.product.id", created.Id.ToString());
+
+    logger.LogInformation("[Products] Created product: {ProductId}", created.Id);
+    return Results.Ok(created);
+})
+.WithName("CreateProduct");
+
+app.MapPut("/products/{id:int}", (int id, Product product, ProductStore store,
+    SessionManager sessionManager, HttpContext context, ILogger<Program> logger) =>
+{
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "PUT /products/{id}";
+        activeScope.Span.SetTag("custom.operation.type", "product_update");
+        activeScope.Span.SetTag("custom.product.id", id.ToString());
+    }
+
+    var updated = store.Update(id, product);
+
+    if (updated == null)
+    {
+        if (activeScope != null)
+            activeScope.Span.SetTag("custom.product.found", "false");
+        logger.LogWarning("[Products] Update failed - product not found: {ProductId}", id);
+        return Results.NotFound(new { message = "Product not found" });
+    }
+
+    if (activeScope != null)
+        activeScope.Span.SetTag("custom.product.found", "true");
+
+    logger.LogInformation("[Products] Updated product: {ProductId}", id);
+    return Results.Ok(updated);
+})
+.WithName("UpdateProduct");
+
+app.MapPatch("/products/{id:int}", (int id, Product product, ProductStore store,
+    SessionManager sessionManager, HttpContext context, ILogger<Program> logger) =>
+{
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "PATCH /products/{id}";
+        activeScope.Span.SetTag("custom.operation.type", "product_patch");
+        activeScope.Span.SetTag("custom.product.id", id.ToString());
+    }
+
+    var updated = store.Update(id, product);
+
+    if (updated == null)
+    {
+        if (activeScope != null)
+            activeScope.Span.SetTag("custom.product.found", "false");
+        logger.LogWarning("[Products] Patch failed - product not found: {ProductId}", id);
+        return Results.NotFound(new { message = "Product not found" });
+    }
+
+    if (activeScope != null)
+        activeScope.Span.SetTag("custom.product.found", "true");
+
+    logger.LogInformation("[Products] Patched product: {ProductId}", id);
+    return Results.Ok(updated);
+})
+.WithName("PatchProduct");
+
+app.MapDelete("/products/{id:int}", (int id, ProductStore store, SessionManager sessionManager,
+    HttpContext context, ILogger<Program> logger) =>
+{
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "DELETE /products/{id}";
+        activeScope.Span.SetTag("custom.operation.type", "product_delete");
+        activeScope.Span.SetTag("custom.product.id", id.ToString());
+    }
+
+    var deleted = store.Delete(id);
+
+    if (deleted == null)
+    {
+        if (activeScope != null)
+            activeScope.Span.SetTag("custom.product.found", "false");
+        logger.LogWarning("[Products] Delete failed - product not found: {ProductId}", id);
+        return Results.NotFound(new { message = "Product not found" });
+    }
+
+    if (activeScope != null)
+        activeScope.Span.SetTag("custom.product.found", "true");
+
+    logger.LogInformation("[Products] Deleted product: {ProductId}", id);
+    return Results.Ok(deleted);
+})
+.WithName("DeleteProduct");
+
+// Carts API Endpoints
+app.MapGet("/carts", (CartStore store, HttpContext context, ILogger<Program> logger,
+    int? limit, string? sort, string? startdate, string? enddate) =>
+{
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "GET /carts";
+        activeScope.Span.SetTag("custom.operation.type", "carts_list");
+        activeScope.Span.SetTag("custom.query.limit", limit?.ToString() ?? "none");
+        activeScope.Span.SetTag("custom.query.sort", sort ?? "asc");
+    }
+
+    IEnumerable<Cart> carts;
+
+    // Date filtering if provided
+    if (!string.IsNullOrEmpty(startdate) || !string.IsNullOrEmpty(enddate))
+    {
+        DateTime? start = string.IsNullOrEmpty(startdate) ? null : DateTime.Parse(startdate);
+        DateTime? end = string.IsNullOrEmpty(enddate) ? null : DateTime.Parse(enddate);
+        carts = store.GetByDateRange(start, end);
+
+        if (activeScope != null)
+        {
+            activeScope.Span.SetTag("custom.query.startdate", startdate ?? "none");
+            activeScope.Span.SetTag("custom.query.enddate", enddate ?? "none");
+        }
+    }
+    else
+    {
+        carts = store.GetAll();
+    }
+
+    // Apply sorting
+    if (sort == "desc")
+        carts = carts.OrderByDescending(c => c.Id);
+
+    // Apply limit
+    if (limit.HasValue && limit > 0)
+        carts = carts.Take(limit.Value);
+
+    var result = carts.ToList();
+
+    if (activeScope != null)
+        activeScope.Span.SetTag("custom.result.count", result.Count.ToString());
+
+    logger.LogInformation("[Carts] Retrieved {Count} carts", result.Count);
+    return Results.Ok(result);
+})
+.WithName("GetCarts");
+
+app.MapGet("/carts/{id:int}", (int id, CartStore store, HttpContext context, ILogger<Program> logger) =>
+{
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "GET /carts/{id}";
+        activeScope.Span.SetTag("custom.operation.type", "cart_get");
+        activeScope.Span.SetTag("custom.cart.id", id.ToString());
+    }
+
+    var cart = store.GetById(id);
+
+    if (cart == null)
+    {
+        if (activeScope != null)
+            activeScope.Span.SetTag("custom.cart.found", "false");
+        logger.LogWarning("[Carts] Cart not found: {CartId}", id);
+        return Results.NotFound(new { message = "Cart not found" });
+    }
+
+    if (activeScope != null)
+    {
+        activeScope.Span.SetTag("custom.cart.found", "true");
+        activeScope.Span.SetTag("custom.cart.product_count", cart.Products.Count.ToString());
+    }
+
+    logger.LogInformation("[Carts] Retrieved cart: {CartId}", id);
+    return Results.Ok(cart);
+})
+.WithName("GetCart");
+
+app.MapGet("/carts/user/{userId}", (string userId, CartStore store, HttpContext context, ILogger<Program> logger) =>
+{
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "GET /carts/user/{userId}";
+        activeScope.Span.SetTag("custom.operation.type", "carts_by_user");
+        activeScope.Span.SetTag("custom.user.id", userId);
+    }
+
+    var carts = store.GetByUserId(userId).ToList();
+
+    if (activeScope != null)
+        activeScope.Span.SetTag("custom.result.count", carts.Count.ToString());
+
+    logger.LogInformation("[Carts] Retrieved {Count} carts for user: {UserId}", carts.Count, userId);
+    return Results.Ok(carts);
+})
+.WithName("GetCartsByUser");
+
+app.MapPost("/carts", (Cart cart, CartStore store, SessionManager sessionManager,
+    HttpContext context, ILogger<Program> logger) =>
+{
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "POST /carts";
+        activeScope.Span.SetTag("custom.operation.type", "cart_create");
+        activeScope.Span.SetTag("custom.cart.user_id", cart.UserId);
+        activeScope.Span.SetTag("custom.cart.product_count", cart.Products.Count.ToString());
+    }
+
+    var created = store.Add(cart);
+
+    if (activeScope != null)
+        activeScope.Span.SetTag("custom.cart.id", created.Id.ToString());
+
+    logger.LogInformation("[Carts] Created cart: {CartId} for user: {UserId}", created.Id, created.UserId);
+    return Results.Ok(created);
+})
+.WithName("CreateCart");
+
+app.MapPut("/carts/{id:int}", (int id, Cart cart, CartStore store, HttpContext context, ILogger<Program> logger) =>
+{
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "PUT /carts/{id}";
+        activeScope.Span.SetTag("custom.operation.type", "cart_update");
+        activeScope.Span.SetTag("custom.cart.id", id.ToString());
+    }
+
+    var updated = store.Update(id, cart);
+
+    if (updated == null)
+    {
+        if (activeScope != null)
+            activeScope.Span.SetTag("custom.cart.found", "false");
+        logger.LogWarning("[Carts] Update failed - cart not found: {CartId}", id);
+        return Results.NotFound(new { message = "Cart not found" });
+    }
+
+    if (activeScope != null)
+        activeScope.Span.SetTag("custom.cart.found", "true");
+
+    logger.LogInformation("[Carts] Updated cart: {CartId}", id);
+    return Results.Ok(updated);
+})
+.WithName("UpdateCart");
+
+app.MapPatch("/carts/{id:int}", (int id, Cart cart, CartStore store, HttpContext context, ILogger<Program> logger) =>
+{
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "PATCH /carts/{id}";
+        activeScope.Span.SetTag("custom.operation.type", "cart_patch");
+        activeScope.Span.SetTag("custom.cart.id", id.ToString());
+    }
+
+    var updated = store.Update(id, cart);
+
+    if (updated == null)
+    {
+        if (activeScope != null)
+            activeScope.Span.SetTag("custom.cart.found", "false");
+        logger.LogWarning("[Carts] Patch failed - cart not found: {CartId}", id);
+        return Results.NotFound(new { message = "Cart not found" });
+    }
+
+    if (activeScope != null)
+        activeScope.Span.SetTag("custom.cart.found", "true");
+
+    logger.LogInformation("[Carts] Patched cart: {CartId}", id);
+    return Results.Ok(updated);
+})
+.WithName("PatchCart");
+
+app.MapDelete("/carts/{id:int}", (int id, CartStore store, HttpContext context, ILogger<Program> logger) =>
+{
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = "DELETE /carts/{id}";
+        activeScope.Span.SetTag("custom.operation.type", "cart_delete");
+        activeScope.Span.SetTag("custom.cart.id", id.ToString());
+    }
+
+    var deleted = store.Delete(id);
+
+    if (deleted == null)
+    {
+        if (activeScope != null)
+            activeScope.Span.SetTag("custom.cart.found", "false");
+        logger.LogWarning("[Carts] Delete failed - cart not found: {CartId}", id);
+        return Results.NotFound(new { message = "Cart not found" });
+    }
+
+    if (activeScope != null)
+        activeScope.Span.SetTag("custom.cart.found", "true");
+
+    logger.LogInformation("[Carts] Deleted cart: {CartId}", id);
+    return Results.Ok(deleted);
+})
+.WithName("DeleteCart");
 
 app.Logger.LogInformation("API Starting on port 8080...");
 app.Logger.LogInformation("Web Portal: http://localhost:5000");

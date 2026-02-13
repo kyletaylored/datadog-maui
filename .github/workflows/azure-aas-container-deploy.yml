@@ -1,4 +1,4 @@
-name: Build and Deploy Container to Azure Web App
+name: Deploy .NET Core to Azure Web App (container)
 
 on:
   push:

@@ -3,11 +3,29 @@ using System.Diagnostics;
 using Datadog.Trace;
 using DatadogMauiApi.Models;
 using DatadogMauiApi.Services;
+using Serilog;
+using Serilog.Formatting.Json;
+
+// Configure Serilog for JSON file logging + console logging
+// This enables log and trace correlation with Datadog
+Log.Logger = new LoggerConfiguration()
+    .Enrich.FromLogContext()  // Required for DD_LOGS_INJECTION to inject trace IDs
+    .WriteTo.Console(new JsonFormatter())  // JSON console logs
+    .WriteTo.File(
+        new JsonFormatter(),
+        path: "/home/LogFiles/application.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 7,
+        shared: true,
+        flushToDiskInterval: TimeSpan.FromSeconds(1))
+    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure logging with JSON formatting for Datadog
-builder.Logging.ClearProviders();
+// Use Serilog for logging
+builder.Host.UseSerilog();
+
+// Configure built-in logger as fallback (optional, but keeps Microsoft.Extensions.Logging working)
 builder.Logging.AddJsonConsole(options =>
 {
     options.IncludeScopes = true;

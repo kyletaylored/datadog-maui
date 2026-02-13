@@ -23,10 +23,15 @@ ARG BUILD_DATE
 # They are not secret and are safe to include in client-side code
 ARG DD_RUM_WEB_CLIENT_TOKEN
 ARG DD_RUM_WEB_APPLICATION_ID
-ARG DD_RUM_WEB_SERVICE
-ARG DD_SITE
+ARG DD_RUM_WEB_SERVICE=datadog-maui-api-core
+ARG DD_SITE=datadoghq.com
+ARG DD_ENV=local
+ARG DD_VERSION=1.0.0
 
 WORKDIR /app
+
+# Create log directory for file logging
+RUN mkdir -p /home/LogFiles && chmod 777 /home/LogFiles
 
 # Install dependencies and Datadog .NET APM tracer
 # TRACER_VERSION can be overridden at build time via --build-arg
@@ -51,6 +56,8 @@ RUN if [ -f wwwroot/index.html ] && [ -n "$DD_RUM_WEB_CLIENT_TOKEN" ] && [ -n "$
     sed -i "s/PLACEHOLDER_APPLICATION_ID/${DD_RUM_WEB_APPLICATION_ID}/" wwwroot/index.html && \
     sed -i "s/PLACEHOLDER_SITE/${DD_SITE}/" wwwroot/index.html && \
     sed -i "s/PLACEHOLDER_SERVICE/${DD_RUM_WEB_SERVICE}/" wwwroot/index.html && \
+    sed -i "s/PLACEHOLDER_VERSION/${DD_VERSION}/" wwwroot/index.html && \
+    sed -i "s/PLACEHOLDER_ENV/${DD_ENV}/" wwwroot/index.html && \
     echo "✅ RUM credentials injected into index.html"; \
     else \
     echo "⚠️  Skipping RUM injection (file not found or credentials not provided)"; \
@@ -72,8 +79,11 @@ ENV DD_INTEGRATIONS=/opt/datadog/integrations.json
 # Datadog configuration - most values should come from docker-compose runtime
 # Only set essential defaults here that are unlikely to change
 ENV DD_TRACE_SAMPLE_RATE=1.0
+ENV DD_LOGS_INJECTION=true
+ENV DD_RUNTIME_METRICS_ENABLED=true
 
-# Datadog Git metadata (for CI/CD integration)
+# Datadog version and Git metadata (for CI/CD integration)
+ENV DD_VERSION=${DD_VERSION}
 ENV DD_GIT_REPOSITORY_URL=${DD_GIT_REPOSITORY_URL}
 ENV DD_GIT_COMMIT_SHA=${DD_GIT_COMMIT_SHA}
 ENV DD_GIT_TAG=${DD_GIT_TAG}
@@ -85,9 +95,10 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
     org.opencontainers.image.version="${DD_GIT_TAG}" \
     org.opencontainers.image.title="Datadog MAUI API" \
     org.opencontainers.image.description=".NET API with Datadog APM tracing for MAUI mobile app" \
-    com.datadoghq.tags.service="datadog-maui-api" \
-    com.datadoghq.tags.env="local" \
-    com.datadoghq.tags.version="${DD_GIT_TAG}" \
+    org.opencontainers.image.architecture="${TARGETARCH}" \
+    com.datadoghq.tags.service="datadog-maui-api-core" \
+    com.datadoghq.tags.env="${DD_ENV}" \
+    com.datadoghq.tags.version="${DD_VERSION}" \
     git.repository_url="${DD_GIT_REPOSITORY_URL}" \
     git.commit.sha="${DD_GIT_COMMIT_SHA}" \
     git.tag="${DD_GIT_TAG}"

@@ -4,6 +4,8 @@ using Microsoft.Owin;
 using Owin;
 using System.Web.Http.Cors;
 using Microsoft.Owin.Extensions;
+using Serilog;
+using Serilog.Formatting.Compact;
 
 [assembly: OwinStartup(typeof(DatadogMauiApi.Framework.Startup))]
 
@@ -27,6 +29,21 @@ namespace DatadogMauiApi.Framework
     {
         public void Configuration(IAppBuilder app)
         {
+            // Configure Serilog for JSON file logging to enable log/trace correlation with Datadog
+            // DD_LOGS_INJECTION will automatically inject trace IDs into log entries
+            Log.Logger = new LoggerConfiguration()
+                .Enrich.FromLogContext()  // Required for DD_LOGS_INJECTION
+                .WriteTo.Console(new CompactJsonFormatter())  // JSON console logs
+                .WriteTo.File(
+                    new CompactJsonFormatter(),
+                    path: @"C:\home\LogFiles\application.log",
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 7,
+                    shared: true,
+                    flushToDiskInterval: TimeSpan.FromSeconds(1))
+                .CreateLogger();
+
+            System.Diagnostics.Debug.WriteLine("[Serilog] Logger configured for JSON file logging with Datadog correlation");
             // Create Web API configuration
             var config = new HttpConfiguration();
 
@@ -152,7 +169,8 @@ namespace DatadogMauiApi.Framework
             // This ensures we capture the root aspnet.request span created by Datadog
             app.Use(async (context, next) =>
             {
-                System.Diagnostics.Debug.WriteLine($"[Datadog OWIN] Request: {context.Request.Method} {context.Request.Path}");
+                // Log request using Serilog (will include trace correlation via DD_LOGS_INJECTION)
+                Log.Information("[OWIN Request] {Method} {Path}", context.Request.Method, context.Request.Path);
 
                 // Get the active Datadog span (should be aspnet.request)
                 var scope = Datadog.Trace.Tracer.Instance.ActiveScope;
@@ -171,17 +189,12 @@ namespace DatadogMauiApi.Framework
                     scope.Span.SetTag("custom.span.type", "aspnet.request.parent");
                     scope.Span.SetTag("custom.pipeline", "owin");
 
-                    System.Diagnostics.Debug.WriteLine($"[Datadog OWIN] ✅ Captured span: {scope.Span.OperationName} (SpanId: {scope.Span.SpanId}, TraceId: {scope.Span.TraceId})");
+                    Log.Information("[Datadog Span] Captured span: {OperationName} SpanId={SpanId} TraceId={TraceId}",
+                        scope.Span.OperationName, scope.Span.SpanId, scope.Span.TraceId);
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("[Datadog OWIN] ❌ WARNING: No active span found");
-                    System.Diagnostics.Debug.WriteLine("[Datadog OWIN] This usually means:");
-                    System.Diagnostics.Debug.WriteLine("[Datadog OWIN]   1. Datadog .NET Tracer is not installed");
-                    System.Diagnostics.Debug.WriteLine("[Datadog OWIN]   2. COR_ENABLE_PROFILING environment variable is not set to 1");
-                    System.Diagnostics.Debug.WriteLine("[Datadog OWIN]   3. IIS Express was not started with Datadog environment variables");
-                    System.Diagnostics.Debug.WriteLine("[Datadog OWIN]   4. The .NET Tracer profiler DLL failed to attach");
-                    System.Diagnostics.Debug.WriteLine("[Datadog OWIN] Check the diagnostic output above for more details.");
+                    Log.Warning("[Datadog OWIN] No active span found - tracer may not be attached");
                 }
 
                 await next();
@@ -190,12 +203,15 @@ namespace DatadogMauiApi.Framework
                 if (scope != null)
                 {
                     scope.Span.SetTag("http.status_code", context.Response.StatusCode.ToString());
+                    Log.Information("[OWIN Response] {Method} {Path} Status={StatusCode}",
+                        context.Request.Method, context.Request.Path, context.Response.StatusCode);
 
                     // After processing, check if there's still an active scope (might be the child span)
                     var currentScope = Datadog.Trace.Tracer.Instance.ActiveScope;
                     if (currentScope != null && currentScope.Span.SpanId != scope.Span.SpanId)
                     {
-                        System.Diagnostics.Debug.WriteLine($"[Datadog OWIN] Active span changed to: {currentScope.Span.OperationName} (SpanId: {currentScope.Span.SpanId})");
+                        Log.Debug("[Datadog OWIN] Active span changed to: {OperationName} SpanId={SpanId}",
+                            currentScope.Span.OperationName, currentScope.Span.SpanId);
                     }
                 }
             });
@@ -203,14 +219,15 @@ namespace DatadogMauiApi.Framework
             // Add custom OWIN middleware for logging/debugging
             app.Use(async (context, next) =>
             {
-                System.Diagnostics.Debug.WriteLine($"[OWIN] {context.Request.Method} {context.Request.Path}");
+                Log.Debug("[OWIN Pipeline] {Method} {Path}", context.Request.Method, context.Request.Path);
                 await next();
-                System.Diagnostics.Debug.WriteLine($"[OWIN] Response: {context.Response.StatusCode}");
+                Log.Debug("[OWIN Pipeline] Response: {StatusCode}", context.Response.StatusCode);
             });
 
             // Use Web API with OWIN
             app.UseWebApi(config);
 
+            Log.Information("[OWIN] Startup configured - OWIN pipeline is active");
             System.Diagnostics.Debug.WriteLine("[OWIN] Startup configured - OWIN pipeline is active");
         }
     }

@@ -48,8 +48,8 @@ RUM credentials are **injected at Docker build time** from environment variables
       applicationId: "PLACEHOLDER_APPLICATION_ID",
       site: "PLACEHOLDER_SITE",
       service: "PLACEHOLDER_SERVICE",
-      env: "local",
-      version: "1.0.0",
+      env: "PLACEHOLDER_ENV",
+      version: "PLACEHOLDER_VERSION",
       sessionSampleRate: 100,
       sessionReplaySampleRate: 100,
       trackBfcacheViews: true,
@@ -68,6 +68,8 @@ RUN if [ -f wwwroot/index.html ] && [ -n "$DD_RUM_WEB_CLIENT_TOKEN" ] && [ -n "$
       sed -i "s/PLACEHOLDER_APPLICATION_ID/${DD_RUM_WEB_APPLICATION_ID}/" wwwroot/index.html && \
       sed -i "s/PLACEHOLDER_SITE/${DD_SITE}/" wwwroot/index.html && \
       sed -i "s/PLACEHOLDER_SERVICE/${DD_RUM_WEB_SERVICE}/" wwwroot/index.html && \
+      sed -i "s/PLACEHOLDER_VERSION/${DD_VERSION}/" wwwroot/index.html && \
+      sed -i "s/PLACEHOLDER_ENV/${DD_ENV}/" wwwroot/index.html && \
       echo "✅ RUM credentials injected into index.html"; \
     else \
       echo "⚠️  Skipping RUM injection (file not found or credentials not provided)"; \

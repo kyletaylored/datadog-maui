@@ -48,6 +48,7 @@ $rumConfig = @{
     service = 'datadog-maui-api-framework'
     site = 'datadoghq.com'
     env = 'prod'
+    version = '1.0.0'
 }
 
 Get-Content $envFile | ForEach-Object {
@@ -70,6 +71,7 @@ Get-Content $envFile | ForEach-Object {
             'DD_RUM_WEB_SERVICE' { $rumConfig.service = $value }
             'DD_SITE' { $rumConfig.site = $value }
             'DD_ENV' { $rumConfig.env = $value }
+            'DD_VERSION' { $rumConfig.version = $value }
         }
     }
 }
@@ -80,6 +82,7 @@ $applicationId = $rumConfig['applicationId']
 $site = $rumConfig['site']
 $envName = $rumConfig['env']
 $service = $rumConfig['service']
+$version = $rumConfig['version']
 
 $jsConfig = @"
 // RUM Configuration (generated from .env)
@@ -90,7 +93,7 @@ window.DD_RUM_CONFIG = {
     site: '$site',
     service: '$service',
     env: '$envName',
-    version: '1.0.0',
+    version: '$version',
     sessionSampleRate: 100,
     sessionReplaySampleRate: 100,
     trackBfcacheViews: true,
@@ -112,3 +115,4 @@ Write-Host "  Application ID: ${applicationId}"
 Write-Host "  Service: ${service}"
 Write-Host "  Site: ${site}"
 Write-Host "  Environment: ${envName}"
+Write-Host "  Version: ${version}"

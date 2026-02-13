@@ -40,6 +40,7 @@ jobs:
           echo "DD_RUM_WEB_SERVICE=${{ env.RUM_SERVICE }}" >> .env
           echo "DD_SITE=${{ secrets.DD_SITE }}" >> .env
           echo "DD_ENV=${{ secrets.DD_ENV }}" >> .env
+          echo "DD_VERSION=${{ github.sha }}" >> .env
         shell: bash
 
       - name: Validate NuGet config & restore packages (packages.config -> solution packages folder)
@@ -196,6 +197,15 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Configure Datadog version
+        shell: pwsh
+        run: |
+          az webapp config appsettings set \
+            --resource-group ese-tola \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --settings DD_VERSION="${{ github.sha }}"
+          Write-Host "✅ Set DD_VERSION to commit SHA: ${{ github.sha }}"
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp

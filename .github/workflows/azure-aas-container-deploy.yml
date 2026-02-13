@@ -1,0 +1,191 @@
+name: Build and Deploy Container to Azure Web App
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'Api/**'
+      - '.github/workflows/azure-aas-container-deploy.yml'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/api
+  AZURE_WEBAPP_NAME: datadog-maui-api-core
+  AZURE_RESOURCE_GROUP: ese-tola
+
+jobs:
+  build-and-push:
+    name: Build and Push Container
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image-tags: ${{ steps.meta.outputs.tags }}
+      image-ref: ${{ steps.meta.outputs.tags }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU for multi-arch builds
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value={{branch}}-{{date 'YYYYMMDD'}}
+          labels: |
+            org.opencontainers.image.title=Datadog MAUI API
+            org.opencontainers.image.description=.NET 9 API with Datadog APM and RUM integration
+            com.datadoghq.tags.service=datadog-maui-api
+            com.datadoghq.tags.env=production
+
+      - name: Get latest Datadog tracer version
+        id: get-tracer-version
+        run: |
+          TRACER_VERSION=$(curl -s https://api.github.com/repos/DataDog/dd-trace-dotnet/releases/latest | jq -r '.tag_name | ltrimstr("v")')
+          echo "tracer-version=$TRACER_VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Using Datadog tracer version: $TRACER_VERSION"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Api
+          file: ./Api/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            TRACER_VERSION=${{ steps.get-tracer-version.outputs.tracer-version }}
+            DD_GIT_REPOSITORY_URL=${{ github.server_url }}/${{ github.repository }}
+            DD_GIT_COMMIT_SHA=${{ github.sha }}
+            DD_GIT_TAG=${{ github.ref_name }}
+            BUILD_DATE=${{ steps.meta.outputs.created }}
+            DD_RUM_WEB_CLIENT_TOKEN=${{ secrets.DD_RUM_WEB_CLIENT_TOKEN }}
+            DD_RUM_WEB_APPLICATION_ID=${{ secrets.DD_RUM_WEB_APPLICATION_ID }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Output build summary
+        run: |
+          echo "### 🐳 Container Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Datadog Tracer Version:** ${{ steps.get-tracer-version.outputs.tracer-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Git Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Git Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Image Tags:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  deploy-to-azure:
+    name: Deploy to Azure Web App
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Configure container registry credentials
+        run: |
+          echo "🔧 Configuring Azure Web App for container deployment..."
+          az webapp config appsettings set \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --settings \
+              DOCKER_REGISTRY_SERVER_URL=https://${{ env.REGISTRY }} \
+              DOCKER_REGISTRY_SERVER_USERNAME=${{ github.actor }} \
+              DOCKER_REGISTRY_SERVER_PASSWORD=${{ secrets.GITHUB_TOKEN }} \
+              DOCKER_ENABLE_CI=true \
+              WEBSITES_ENABLE_APP_SERVICE_STORAGE=false \
+              WEBSITES_PORT=8080
+          echo "✅ Container registry credentials configured"
+
+      - name: Deploy container to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          slot-name: 'Production'
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Wait for deployment to stabilize
+        run: |
+          echo "⏳ Waiting 30 seconds for deployment to complete..."
+          sleep 30
+
+      - name: Health check
+        run: |
+          echo "🏥 Running health check..."
+          MAX_RETRIES=5
+          RETRY_COUNT=0
+
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            echo "Attempt $((RETRY_COUNT + 1)) of $MAX_RETRIES..."
+
+            if curl -f -s https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health > /dev/null 2>&1; then
+              echo "✅ Health check passed!"
+
+              # Get detailed health response
+              HEALTH_RESPONSE=$(curl -s https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health)
+              echo "Health endpoint response:"
+              echo "$HEALTH_RESPONSE" | jq '.' || echo "$HEALTH_RESPONSE"
+
+              # Add to step summary
+              echo "### ✅ Deployment Successful" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Web App URL:** https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net" >> $GITHUB_STEP_SUMMARY
+              echo "**Health Endpoint:** https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/health" >> $GITHUB_STEP_SUMMARY
+              echo "**API Endpoints:** https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net/products" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
+              echo "$HEALTH_RESPONSE" | jq '.' || echo "$HEALTH_RESPONSE" >> $GITHUB_STEP_SUMMARY
+              echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+              exit 0
+            else
+              echo "⚠️  Health check failed, retrying in 10 seconds..."
+              sleep 10
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+            fi
+          done
+
+          echo "❌ Health check failed after $MAX_RETRIES attempts"
+          echo "### ❌ Deployment Health Check Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The deployment completed but the health endpoint is not responding." >> $GITHUB_STEP_SUMMARY
+          echo "Check Azure logs: \`az webapp log tail --name ${{ env.AZURE_WEBAPP_NAME }} --resource-group ${{ env.AZURE_RESOURCE_GROUP }}\`" >> $GITHUB_STEP_SUMMARY
+          exit 1
+
+      - name: Azure logout
+        if: always()
+        run: |
+          az logout

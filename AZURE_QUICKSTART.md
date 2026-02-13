@@ -10,7 +10,7 @@ Your Datadog MAUI API is now ready to deploy to Azure App Service on Windows! He
 
 - `scripts/deploy-azure.sh` - Automated deployment script (Bash)
 - `scripts/install-datadog-windows.ps1` - Datadog tracer installation for Windows
-- `.github/workflows/azure-aca-deploy.yml` - GitHub Actions CI/CD workflow
+- `.github/workflows/azure-aca-container-deploy.yml` - GitHub Actions CI/CD workflow
 - `.deployment` - Azure project configuration
 
 ### Configuration Files
@@ -156,7 +156,7 @@ To enable automated deployments:
    - Paste contents of `publish-profile.xml`
 
 3. **Update workflow file**:
-   Edit `.github/workflows/azure-aca-deploy.yml`:
+   Edit `.github/workflows/azure-aca-container-deploy.yml`:
 
    ```yaml
    env:

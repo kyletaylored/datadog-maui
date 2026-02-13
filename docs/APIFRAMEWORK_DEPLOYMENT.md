@@ -142,7 +142,7 @@ curl https://datadog-maui-framework-api.azurewebsites.net/config
 ## Related Files
 
 - [Workflow](.github/workflows/azure-aas-deploy.yml) - GitHub Actions workflow for Azure Web App
-- [Container Workflow](.github/workflows/azure-aca-deploy.yml) - GitHub Actions workflow for Container App
+- [Container Workflow](.github/workflows/azure-aca-container-deploy.yml) - GitHub Actions workflow for Container App
 - [API Documentation](API.md) - ApiFramework endpoints
 - [Local Development](../README.md) - Running locally
 

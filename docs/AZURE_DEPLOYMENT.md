@@ -129,7 +129,7 @@ For automated deployments on every push to main:
    - Paste the XML content from step 1
 
 3. **Update Workflow**:
-   Edit `.github/workflows/azure-aca-deploy.yml` and set:
+   Edit `.github/workflows/azure-aca-container-deploy.yml` and set:
 
    ```yaml
    env:

@@ -27,11 +27,13 @@ ARG DD_RUM_WEB_APPLICATION_ID
 WORKDIR /app
 
 # Install dependencies and Datadog .NET APM tracer
+# TRACER_VERSION can be overridden at build time via --build-arg
+ARG TRACER_VERSION=3.34.0
 RUN apt-get update \
     && apt-get install -y unzip procps wget curl \
     && mkdir -p /opt/datadog \
     && mkdir -p /var/log/datadog \
-    && TRACER_VERSION=3.34.0 \
+    && echo "Installing Datadog tracer version ${TRACER_VERSION} for ${TARGETARCH}" \
     && curl -LO https://github.com/DataDog/dd-trace-dotnet/releases/download/v${TRACER_VERSION}/datadog-dotnet-apm_${TRACER_VERSION}_${TARGETARCH}.deb \
     && dpkg -i ./datadog-dotnet-apm_${TRACER_VERSION}_${TARGETARCH}.deb \
     && /opt/datadog/createLogPath.sh \

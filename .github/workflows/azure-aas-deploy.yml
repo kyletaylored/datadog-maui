@@ -160,6 +160,28 @@ jobs:
             Write-Host "Found: $($_.FullName)"
           }
 
+      - name: Verify Serilog DLLs in published output
+        shell: pwsh
+        run: |
+          Write-Host "=== Checking for Serilog DLLs in published bin folder ==="
+          $binPath = "${{ env.PUBLISHED_DIR }}\bin"
+
+          if (Test-Path $binPath) {
+            $serilogDlls = Get-ChildItem $binPath -Filter "Serilog*.dll" -ErrorAction SilentlyContinue
+
+            if ($serilogDlls) {
+              Write-Host "✅ Found Serilog DLLs:"
+              $serilogDlls | ForEach-Object { Write-Host "  - $($_.Name) ($([math]::Round($_.Length/1KB, 2)) KB)" }
+            } else {
+              Write-Host "⚠️  No Serilog DLLs found in bin folder - this will cause startup failure"
+            }
+
+            Write-Host "`n=== All DLLs in bin folder: ==="
+            Get-ChildItem $binPath -Filter "*.dll" | ForEach-Object { Write-Host "  $($_.Name)" }
+          } else {
+            Write-Host "❌ bin folder not found at: $binPath"
+          }
+
       - name: Check if publish succeeded
         id: check-publish
         shell: pwsh

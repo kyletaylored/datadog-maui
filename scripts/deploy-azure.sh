@@ -22,7 +22,7 @@ fi
 
 # Configuration (you can override these with environment variables)
 RESOURCE_GROUP="${AZURE_RESOURCE_GROUP:-datadog-maui-rg}"
-APP_NAME="${AZURE_APP_NAME:-datadog-maui-api}"
+APP_NAME="${AZURE_APP_NAME:-datadog-maui-api-function}"
 LOCATION="${AZURE_LOCATION:-eastus}"
 APP_SERVICE_PLAN="${AZURE_APP_SERVICE_PLAN:-datadog-maui-plan}"
 SKU="${AZURE_SKU:-B1}"  # Basic tier - can upgrade to S1, P1V2, etc.

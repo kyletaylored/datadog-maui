@@ -23,7 +23,8 @@ ARG BUILD_DATE
 # They are not secret and are safe to include in client-side code
 ARG DD_RUM_WEB_CLIENT_TOKEN
 ARG DD_RUM_WEB_APPLICATION_ID
-ARG DD_RUM_WEB_SERVICE=datadog-maui-api-core
+ARG DD_RUM_WEB_SERVICE=datadog-maui-core-web
+ARG DD_SERVICE=datadog-maui-core-api
 ARG DD_SITE=datadoghq.com
 ARG DD_ENV=local
 ARG DD_VERSION=1.0.0
@@ -96,7 +97,7 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
     org.opencontainers.image.title="Datadog MAUI API" \
     org.opencontainers.image.description=".NET API with Datadog APM tracing for MAUI mobile app" \
     org.opencontainers.image.architecture="${TARGETARCH}" \
-    com.datadoghq.tags.service="datadog-maui-api-core" \
+    com.datadoghq.tags.service="${DD_SERVICE}" \
     com.datadoghq.tags.env="${DD_ENV}" \
     com.datadoghq.tags.version="${DD_VERSION}" \
     git.repository_url="${DD_GIT_REPOSITORY_URL}" \

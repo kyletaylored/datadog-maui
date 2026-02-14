@@ -13,8 +13,8 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/api
   AZURE_RESOURCE_GROUP: ese-tola
-  AZURE_WEBAPP_NAME: datadog-maui-api-core
-  RUM_SERVICE: datadog-maui-web-core
+  AZURE_WEBAPP_NAME: datadog-maui-core-api
+  RUM_SERVICE: datadog-maui-core-web
 
 jobs:
   build-and-push:
@@ -34,6 +34,14 @@ jobs:
       - name: Set up QEMU for multi-arch builds
         uses: docker/setup-qemu-action@v3
 
+      - name: Generate short SHA for version
+        id: short-sha
+        shell: bash
+        run: |
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          echo "sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "📌 Version: $SHORT_SHA"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -46,11 +54,6 @@ jobs:
             type=sha,prefix=sha-
             type=raw,value=latest,enable={{is_default_branch}}
             type=raw,value={{branch}}-{{date 'YYYYMMDD'}}
-          labels: |
-            org.opencontainers.image.title=Datadog MAUI API
-            org.opencontainers.image.description=.NET 9 API with Datadog APM and RUM integration
-            com.datadoghq.tags.service=datadog-maui-api
-            com.datadoghq.tags.env=production
 
       - name: Get latest Datadog tracer version
         id: get-tracer-version
@@ -77,7 +80,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             TRACER_VERSION=${{ steps.get-tracer-version.outputs.tracer-version }}
-            DD_VERSION=${{ github.sha }}
             DD_GIT_REPOSITORY_URL=${{ github.server_url }}/${{ github.repository }}
             DD_GIT_COMMIT_SHA=${{ github.sha }}
             DD_GIT_TAG=${{ github.ref_name }}
@@ -86,6 +88,8 @@ jobs:
             DD_RUM_WEB_APPLICATION_ID=${{ secrets.DD_RUM_WEB_APPLICATION_ID }}
             DD_RUM_WEB_SERVICE=${{ env.RUM_SERVICE }}
             DD_SITE=${{ secrets.DD_SITE }}
+            DD_VERSION=${{ steps.short-sha.outputs.sha }}
+            DD_ENV=${{ secrets.DD_ENV }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -93,7 +97,7 @@ jobs:
         run: |
           echo "### 🐳 Container Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**DD_VERSION:** `${{ github.sha }}`" >> $GITHUB_STEP_SUMMARY
+          echo "**DD_VERSION:** `${{ steps.short-sha.outputs.sha }}`" >> $GITHUB_STEP_SUMMARY
           echo "**Datadog Tracer Version:** ${{ steps.get-tracer-version.outputs.tracer-version }}" >> $GITHUB_STEP_SUMMARY
           echo "**Git Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
           echo "**Git Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY

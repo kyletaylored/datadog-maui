@@ -30,6 +30,14 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
+      - name: Generate short SHA for version
+        id: short-sha
+        shell: bash
+        run: |
+          SHORT_SHA=$(git rev-parse --short=7 HEAD)
+          echo "sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "📌 Version: $SHORT_SHA"
+
       - name: Setup NuGet
         uses: NuGet/setup-nuget@v2
 
@@ -40,7 +48,7 @@ jobs:
           echo "DD_RUM_WEB_SERVICE=${{ env.RUM_SERVICE }}" >> .env
           echo "DD_SITE=${{ secrets.DD_SITE }}" >> .env
           echo "DD_ENV=${{ secrets.DD_ENV }}" >> .env
-          echo "DD_VERSION=${{ github.sha }}" >> .env
+          echo "DD_VERSION=${{ steps.short-sha.outputs.sha }}" >> .env
         shell: bash
 
       - name: Validate NuGet config & restore packages (packages.config -> solution packages folder)
@@ -204,8 +212,8 @@ jobs:
           az webapp config appsettings set \
             --resource-group ese-tola \
             --name ${{ env.AZURE_WEBAPP_NAME }} \
-            --settings DD_VERSION="${{ github.sha }}"
-          Write-Host "✅ Set DD_VERSION to commit SHA: ${{ github.sha }}"
+            --settings DD_VERSION="${{ steps.short-sha.outputs.sha }}"
+          Write-Host "✅ Set DD_VERSION to commit SHA: ${{ steps.short-sha.outputs.sha }}"
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp

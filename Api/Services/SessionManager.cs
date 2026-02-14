@@ -48,7 +48,6 @@ public class SessionManager
     {
         using var scope = Tracer.Instance.StartActive("auth.login");
         scope.Span.ResourceName = "SessionManager.AuthenticateUser";
-        scope.Span.SetTag("service.name", "datadog-maui-api");
         scope.Span.SetTag("auth.username", username);
         scope.Span.SetTag("auth.method", "password");
         scope.Span.SetTag("service.operation", "user_login");
@@ -101,7 +100,6 @@ public class SessionManager
     {
         using var scope = Tracer.Instance.StartActive("auth.validate_session");
         scope.Span.ResourceName = "SessionManager.ValidateSession";
-        scope.Span.SetTag("service.name", "datadog-maui-api");
         scope.Span.SetTag("auth.token_length", token?.Length ?? 0);
 
         if (string.IsNullOrEmpty(token) || !_sessions.ContainsKey(token))
@@ -140,7 +138,6 @@ public class SessionManager
     {
         using var scope = Tracer.Instance.StartActive("user.get_profile");
         scope.Span.ResourceName = "SessionManager.GetUserProfile";
-        scope.Span.SetTag("service.name", "datadog-maui-api");
         scope.Span.SetTag("user.id", userId);
         scope.Span.SetTag("operation.type", "profile_fetch");
 
@@ -168,7 +165,6 @@ public class SessionManager
     {
         using var scope = Tracer.Instance.StartActive("user.update_profile");
         scope.Span.ResourceName = "SessionManager.UpdateUserProfile";
-        scope.Span.SetTag("service.name", "datadog-maui-api");
         scope.Span.SetTag("user.id", userId);
         scope.Span.SetTag("operation.type", "profile_update");
         scope.Span.SetTag("update.fields", "fullName,email");
@@ -203,7 +199,6 @@ public class SessionManager
     {
         using var scope = Tracer.Instance.StartActive("auth.logout");
         scope.Span.ResourceName = "SessionManager.Logout";
-        scope.Span.SetTag("service.name", "datadog-maui-api");
 
         if (string.IsNullOrEmpty(token) || !_sessions.ContainsKey(token))
         {

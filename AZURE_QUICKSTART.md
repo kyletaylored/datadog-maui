@@ -136,7 +136,7 @@ make azure-health
 make azure-logs
 
 # Check Datadog for traces
-# https://app.datadoghq.com/apm/services/datadog-maui-api
+# https://app.datadoghq.com/apm/services/datadog-maui-api-core
 ```
 
 ## CI/CD with GitHub Actions

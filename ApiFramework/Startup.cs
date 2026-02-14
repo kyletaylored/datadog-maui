@@ -1,4 +1,6 @@
 using Microsoft.Owin;
+using Microsoft.Owin.StaticFiles;
+using Microsoft.Owin.FileSystems;
 using Owin;
 using Serilog;
 using Serilog.Formatting.Compact;
@@ -265,6 +267,21 @@ namespace DatadogMauiApi.Framework
                 await next();
                 Log.Debug("[OWIN Pipeline] Response: {StatusCode}", context.Response.StatusCode);
             });
+
+            // Configure static file serving for web portal (index.html, app.js, etc.)
+            var physicalFileSystem = new PhysicalFileSystem(System.Web.Hosting.HostingEnvironment.MapPath("~/"));
+            var fileServerOptions = new FileServerOptions
+            {
+                EnableDefaultFiles = true,
+                FileSystem = physicalFileSystem
+            };
+            fileServerOptions.StaticFileOptions.FileSystem = physicalFileSystem;
+            fileServerOptions.StaticFileOptions.ServeUnknownFileTypes = false;
+            fileServerOptions.DefaultFilesOptions.DefaultFileNames = new[] { "index.html" };
+
+            app.UseFileServer(fileServerOptions);
+
+            Log.Information("[OWIN] Static file serving enabled for web portal");
 
             // Use Web API with OWIN
             app.UseWebApi(config);

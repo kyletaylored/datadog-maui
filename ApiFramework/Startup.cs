@@ -28,21 +28,64 @@ namespace DatadogMauiApi.Framework
     {
         public void Configuration(IAppBuilder app)
         {
-            // Configure Serilog for JSON file logging to enable log/trace correlation with Datadog
-            // DD_LOGS_INJECTION will automatically inject trace IDs into log entries
-            Log.Logger = new LoggerConfiguration()
-                .Enrich.FromLogContext()  // Required for DD_LOGS_INJECTION
-                .WriteTo.Console(new CompactJsonFormatter())  // JSON console logs
-                .WriteTo.File(
-                    new CompactJsonFormatter(),
-                    path: @"C:\home\LogFiles\application.log",
-                    rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 7,
-                    shared: true,
-                    flushToDiskInterval: TimeSpan.FromSeconds(1))
-                .CreateLogger();
+            try
+            {
+                System.Diagnostics.Debug.WriteLine("[OWIN Startup] Beginning configuration...");
 
-            System.Diagnostics.Debug.WriteLine("[Serilog] Logger configured for JSON file logging with Datadog correlation");
+                // Configure Serilog for JSON file logging to enable log/trace correlation with Datadog
+                // DD_LOGS_INJECTION will automatically inject trace IDs into log entries
+                try
+                {
+                    // Ensure log directory exists
+                    var logPath = @"C:\home\LogFiles";
+                    if (!System.IO.Directory.Exists(logPath))
+                    {
+                        System.Diagnostics.Debug.WriteLine($"[Serilog] Creating log directory: {logPath}");
+                        System.IO.Directory.CreateDirectory(logPath);
+                    }
+
+                    Log.Logger = new LoggerConfiguration()
+                        .Enrich.FromLogContext()  // Required for DD_LOGS_INJECTION
+                        .WriteTo.Console(new CompactJsonFormatter())  // JSON console logs
+                        .WriteTo.File(
+                            new CompactJsonFormatter(),
+                            path: @"C:\home\LogFiles\application.log",
+                            rollingInterval: RollingInterval.Day,
+                            retainedFileCountLimit: 7,
+                            shared: true,
+                            flushToDiskInterval: TimeSpan.FromSeconds(1))
+                        .CreateLogger();
+
+                    System.Diagnostics.Debug.WriteLine("[Serilog] Logger configured for JSON file logging with Datadog correlation");
+                }
+                catch (Exception ex)
+                {
+                    // Fall back to Debug output if Serilog fails to initialize
+                    System.Diagnostics.Debug.WriteLine($"[Serilog] Failed to configure logger: {ex.Message}");
+                    System.Diagnostics.Debug.WriteLine($"[Serilog] Stack trace: {ex.StackTrace}");
+
+                    // Create a minimal console-only logger as fallback
+                    Log.Logger = new LoggerConfiguration()
+                        .WriteTo.Console(new CompactJsonFormatter())
+                        .CreateLogger();
+
+                    System.Diagnostics.Debug.WriteLine("[Serilog] Using console-only fallback logger");
+                }
+
+                System.Diagnostics.Debug.WriteLine("[OWIN Startup] Serilog configuration complete");
+            }
+            catch (Exception ex)
+            {
+                // Log any startup failure
+                System.Diagnostics.Debug.WriteLine($"[OWIN Startup] CRITICAL FAILURE: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[OWIN Startup] Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"[OWIN Startup] Inner exception: {ex.InnerException.Message}");
+                }
+                throw; // Re-throw to ensure the failure is visible
+            }
+
             // Create Web API configuration
             var config = new HttpConfiguration();
 

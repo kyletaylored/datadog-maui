@@ -22,6 +22,8 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: read
+    outputs:
+      short_sha: ${{ steps.short-sha.outputs.sha }} 
 
     steps:
       - name: Checkout code
@@ -212,8 +214,8 @@ jobs:
           az webapp config appsettings set \
             --resource-group ese-tola \
             --name ${{ env.AZURE_WEBAPP_NAME }} \
-            --settings DD_VERSION="${{ steps.short-sha.outputs.sha }}"
-          Write-Host "✅ Set DD_VERSION to commit SHA: ${{ steps.short-sha.outputs.sha }}"
+            --settings DD_VERSION="${{ needs.build.outputs.short_sha }}"
+          Write-Host "✅ Set DD_VERSION to commit SHA: ${{ needs.build.outputs.short_sha }}"
 
       - name: Deploy to Azure Web App
         id: deploy-to-webapp

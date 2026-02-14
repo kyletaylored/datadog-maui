@@ -23,8 +23,8 @@ ARG BUILD_DATE
 # They are not secret and are safe to include in client-side code
 ARG DD_RUM_WEB_CLIENT_TOKEN
 ARG DD_RUM_WEB_APPLICATION_ID
-ARG DD_RUM_WEB_SERVICE=datadog-maui-core-web
-ARG DD_SERVICE=datadog-maui-core-api
+ARG DD_RUM_WEB_SERVICE=datadog-maui-web-core
+ARG DD_SERVICE=datadog-maui-api-core
 ARG DD_SITE=datadoghq.com
 ARG DD_ENV=local
 ARG DD_VERSION=1.0.0

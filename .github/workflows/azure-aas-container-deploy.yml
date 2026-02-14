@@ -13,8 +13,8 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/api
   AZURE_RESOURCE_GROUP: ese-tola
-  AZURE_WEBAPP_NAME: datadog-maui-core-api
-  RUM_SERVICE: datadog-maui-core-web
+  AZURE_WEBAPP_NAME: datadog-maui-api-core
+  RUM_SERVICE: datadog-maui-web-core
 
 jobs:
   build-and-push:

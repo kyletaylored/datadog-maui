@@ -1,9 +1,9 @@
-using System.Collections.Generic;
-using System.Linq;
-using System.Web.Http;
 using Datadog.Trace;
 using DatadogMauiApi.Framework.Models;
 using DatadogMauiApi.Framework.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web.Http;
 
 namespace DatadogMauiApi.Framework.Controllers
 {

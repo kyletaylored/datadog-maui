@@ -1,11 +1,10 @@
-using System;
-using System.Web.Http;
 using Microsoft.Owin;
 using Owin;
-using System.Web.Http.Cors;
-using Microsoft.Owin.Extensions;
 using Serilog;
 using Serilog.Formatting.Compact;
+using System;
+using System.Web.Http;
+using System.Web.Http.Cors;
 
 [assembly: OwinStartup(typeof(DatadogMauiApi.Framework.Startup))]
 

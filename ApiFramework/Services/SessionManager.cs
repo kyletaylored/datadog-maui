@@ -1,9 +1,8 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace;
 using DatadogMauiApi.Framework.Models;
+using System;
+using System.Collections.Concurrent;
+using System.Linq;
 
 namespace DatadogMauiApi.Framework.Services
 {

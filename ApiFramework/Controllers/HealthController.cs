@@ -1,8 +1,7 @@
-using System;
-using System.Linq;
-using System.Web.Http;
 using Datadog.Trace;
 using DatadogMauiApi.Framework.Services;
+using System;
+using System.Web.Http;
 
 namespace DatadogMauiApi.Framework.Controllers
 {

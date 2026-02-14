@@ -1,6 +1,6 @@
+using Datadog.Trace;
 using System.Web.Http.Controllers;
 using System.Web.Http.Filters;
-using Datadog.Trace;
 
 namespace DatadogMauiApi.Framework.Filters
 {

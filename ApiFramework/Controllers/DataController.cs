@@ -1,10 +1,10 @@
+using Datadog.Trace;
+using DatadogMauiApi.Framework.Models;
+using DatadogMauiApi.Framework.Services;
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Web.Http;
-using Datadog.Trace;
-using DatadogMauiApi.Framework.Models;
-using DatadogMauiApi.Framework.Services;
 
 namespace DatadogMauiApi.Framework.Controllers
 {

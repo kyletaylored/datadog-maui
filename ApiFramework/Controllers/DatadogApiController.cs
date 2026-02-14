@@ -1,5 +1,5 @@
-using System.Web.Http;
 using Datadog.Trace;
+using System.Web.Http;
 
 namespace DatadogMauiApi.Framework.Controllers
 {

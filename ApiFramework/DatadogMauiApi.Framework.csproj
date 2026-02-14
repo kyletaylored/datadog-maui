@@ -64,7 +64,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Owin.FileSystems, Version=4.2.3.0">
-      <HintPath>packages\Microsoft.Owin.StaticFiles.4.2.3\lib\net45\Microsoft.Owin.FileSystems.dll</HintPath>
+      <HintPath>packages\Microsoft.Owin.FileSystems.4.2.3\lib\net45\Microsoft.Owin.FileSystems.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.Owin.StaticFiles, Version=4.2.3.0">

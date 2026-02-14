@@ -211,9 +211,9 @@ jobs:
       - name: Configure Datadog version
         shell: pwsh
         run: |
-          az webapp config appsettings set \
-            --resource-group ese-tola \
-            --name ${{ env.AZURE_WEBAPP_NAME }} \
+          az webapp config appsettings set `
+            --resource-group ese-tola `
+            --name ${{ env.AZURE_WEBAPP_NAME }} `
             --settings DD_VERSION="${{ needs.build.outputs.short_sha }}"
           Write-Host "✅ Set DD_VERSION to commit SHA: ${{ needs.build.outputs.short_sha }}"
 

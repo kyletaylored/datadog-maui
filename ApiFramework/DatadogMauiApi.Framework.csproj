@@ -156,10 +156,12 @@
   <ItemGroup>
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Controllers\AuthController.cs" />
+    <Compile Include="Controllers\CartsController.cs" />
     <Compile Include="Controllers\DataController.cs" />
     <Compile Include="Controllers\DatadogApiController.cs" />
     <Compile Include="Controllers\HealthController.cs" />
     <Compile Include="Controllers\ConfigController.cs" />
+    <Compile Include="Controllers\ProductsController.cs" />
     <Compile Include="Controllers\ProfileController.cs" />
     <Compile Include="Controllers\RumConfigController.cs" />
     <Compile Include="Filters\DatadogSpanAttribute.cs" />
@@ -167,11 +169,16 @@
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Startup.cs" />
+    <Compile Include="Models\Cart.cs" />
+    <Compile Include="Models\CartProduct.cs" />
     <Compile Include="Models\DataSubmission.cs" />
     <Compile Include="Models\ConfigResponse.cs" />
     <Compile Include="Models\LoginRequest.cs" />
     <Compile Include="Models\LoginResponse.cs" />
+    <Compile Include="Models\Product.cs" />
     <Compile Include="Models\UserProfile.cs" />
+    <Compile Include="Services\CartStore.cs" />
+    <Compile Include="Services\ProductStore.cs" />
     <Compile Include="Services\SessionManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

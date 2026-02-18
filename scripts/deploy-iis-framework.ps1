@@ -259,8 +259,8 @@ try {
     $response = Invoke-RestMethod "http://localhost:$Port/health" -TimeoutSec 5
     Write-Host "✓ Health check passed: $($response.status)" -ForegroundColor Green
 } catch {
-    Write-Warning "Warning: Health check failed. Check IIS logs for details."
-    Write-Host "Troubleshooting:" -ForegroundColor Yellow
+    Write-Warning 'Warning: Health check failed. Check IIS logs for details.'
+    Write-Host 'Troubleshooting:' -ForegroundColor Yellow
     Write-Host '  1. Check Event Viewer > Windows Logs > Application' -ForegroundColor Gray
     Write-Host '  2. Check IIS logs in C:\inetpub\logs\LogFiles' -ForegroundColor Gray
     Write-Host '  3. Verify .NET Framework 4.8 is installed' -ForegroundColor Gray
@@ -268,8 +268,8 @@ try {
     Write-Host '  5. Ensure NuGet packages were restored correctly' -ForegroundColor Gray
 }
 
-Write-Host ""
-Write-Host "Next Steps:" -ForegroundColor Yellow
+Write-Host ''
+Write-Host 'Next Steps:' -ForegroundColor Yellow
 Write-Host '  1. Test authentication: POST http://localhost:$Port/auth/login' -ForegroundColor Gray
 Write-Host '  2. Verify Datadog traces in APM' -ForegroundColor Gray
 Write-Host '  3. Check Datadog metrics and logs' -ForegroundColor Gray

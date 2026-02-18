@@ -257,7 +257,7 @@ Write-Host "Testing endpoint..." -ForegroundColor Yellow
 Start-Sleep -Seconds 3
 try {
     $response = Invoke-RestMethod "http://localhost:$Port/health" -TimeoutSec 5
-    Write-Host "✓ Health check passed: $($response.status)" -ForegroundColor Green
+    Write-Host '✓ Health check passed: ' + $($response.status) -ForegroundColor Green
 } catch {
     Write-Warning 'Warning: Health check failed. Check IIS logs for details.'
     Write-Host 'Troubleshooting:' -ForegroundColor Yellow

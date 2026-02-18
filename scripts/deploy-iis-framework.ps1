@@ -264,12 +264,12 @@ try {
     Write-Host '  1. Check Event Viewer > Windows Logs > Application' -ForegroundColor Gray
     Write-Host '  2. Check IIS logs in C:\inetpub\logs\LogFiles' -ForegroundColor Gray
     Write-Host '  3. Verify .NET Framework 4.8 is installed' -ForegroundColor Gray
-    Write-Host "  4. Check Web.config for errors" -ForegroundColor Gray
-    Write-Host "  5. Ensure NuGet packages were restored correctly" -ForegroundColor Gray
+    Write-Host '  4. Check Web.config for errors' -ForegroundColor Gray
+    Write-Host '  5. Ensure NuGet packages were restored correctly' -ForegroundColor Gray
 }
 
 Write-Host ""
 Write-Host "Next Steps:" -ForegroundColor Yellow
-Write-Host "  1. Test authentication: POST http://localhost:$Port/auth/login" -ForegroundColor Gray
-Write-Host "  2. Verify Datadog traces in APM" -ForegroundColor Gray
-Write-Host "  3. Check Datadog metrics and logs" -ForegroundColor Gray
+Write-Host '  1. Test authentication: POST http://localhost:$Port/auth/login' -ForegroundColor Gray
+Write-Host '  2. Verify Datadog traces in APM' -ForegroundColor Gray
+Write-Host '  3. Check Datadog metrics and logs' -ForegroundColor Gray

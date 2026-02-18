@@ -214,9 +214,9 @@ $appPoolPath = "IIS:\AppPools\$AppPoolName"
 
 # Create environment variables collection if it doesn't exist
 $envVars = @(
-    @{ name = "COR_ENABLE_PROFILING"; value = "1" }
-    @{ name = "COR_PROFILER"; value = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}" }
-    @{ name = "DD_DOTNET_TRACER_HOME"; value = "%ProgramFiles%\Datadog\.NET Tracer\" }
+    @{ name = 'COR_ENABLE_PROFILING'; value = '1' }
+    @{ name = 'COR_PROFILER'; value = '{846F5F1C-F9AE-4B07-969E-05C26BC060D8}' }
+    @{ name = 'DD_DOTNET_TRACER_HOME'; value = '%ProgramFiles%\Datadog\.NET Tracer\' + '' }
 )
 
 foreach ($envVar in $envVars) {
@@ -261,9 +261,9 @@ try {
 } catch {
     Write-Warning "Warning: Health check failed. Check IIS logs for details."
     Write-Host "Troubleshooting:" -ForegroundColor Yellow
-    Write-Host "  1. Check Event Viewer > Windows Logs > Application" -ForegroundColor Gray
-    Write-Host "  2. Check IIS logs in C:\inetpub\logs\LogFiles" -ForegroundColor Gray
-    Write-Host "  3. Verify .NET Framework 4.8 is installed" -ForegroundColor Gray
+    Write-Host '  1. Check Event Viewer > Windows Logs > Application' -ForegroundColor Gray
+    Write-Host '  2. Check IIS logs in C:\inetpub\logs\LogFiles' -ForegroundColor Gray
+    Write-Host '  3. Verify .NET Framework 4.8 is installed' -ForegroundColor Gray
     Write-Host "  4. Check Web.config for errors" -ForegroundColor Gray
     Write-Host "  5. Ensure NuGet packages were restored correctly" -ForegroundColor Gray
 }

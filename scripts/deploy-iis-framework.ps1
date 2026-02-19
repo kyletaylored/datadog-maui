@@ -271,8 +271,13 @@ $webConfigPath = Join-Path $PhysicalPath "Web.config"
 if (Test-Path $webConfigPath) {
     [xml]$webConfig = Get-Content $webConfigPath
 
-    # Update appSettings
+    # Ensure appSettings section exists
     $appSettings = $webConfig.configuration.appSettings
+    if ($null -eq $appSettings) {
+        Write-Host "  Creating appSettings section..." -ForegroundColor Gray
+        $appSettings = $webConfig.CreateElement("appSettings")
+        $webConfig.configuration.AppendChild($appSettings) | Out-Null
+    }
 
     # Helper function to set app setting
     function Set-AppSetting($key, $value) {

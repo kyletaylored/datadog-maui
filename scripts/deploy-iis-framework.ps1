@@ -106,7 +106,7 @@ Write-Host "[OK] NuGet restore complete" -ForegroundColor Green
 Write-Host "[2/8] Building application..." -ForegroundColor Yellow
 Push-Location ApiFramework
 try {
-    & $msbuild /p:Configuration=Release /p:DeployOnBuild=true /p:PublishProfile=FileSystem /verbosity:minimal
+    & $msbuild /p:Configuration=Release /verbosity:minimal
     if ($LASTEXITCODE -ne 0) {
         throw "Build failed"
     }

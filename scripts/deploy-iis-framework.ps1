@@ -216,10 +216,16 @@ if (Test-Path "IIS:\Sites\$SiteName") {
     Remove-Website -Name $SiteName
 }
 
-$conflicts = Get-WebBinding | Where-Object { $_.bindingInformation -match ":(\Q$Port\E)$" }
+$conflicts = Get-WebBinding | Where-Object {
+    $parts = $_.bindingInformation -split ':', 3
+    $parts.Count -ge 2 -and [int]$parts[1] -eq $Port
+}
+
 if ($conflicts) {
-    Write-Warning "Another IIS binding is using port $Port :"
-    $conflicts | ForEach-Object { Write-Host "  $($_.ItemXPath) -> $($_.bindingInformation)" -ForegroundColor Gray }
+    Write-Warning "Another IIS binding is using port $Port:"
+    $conflicts | ForEach-Object {
+        Write-Host "  $($_.ItemXPath) -> $($_.bindingInformation)" -ForegroundColor Gray
+    }
 }
 
 # Create new website

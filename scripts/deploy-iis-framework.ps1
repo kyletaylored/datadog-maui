@@ -191,8 +191,43 @@ if (-not $sourcePath -or -not (Test-Path $sourcePath)) {
     exit 1
 }
 
-Copy-Item -Path (Join-Path $sourcePath '*') -Destination $PhysicalPath -Recurse -Force
-Write-Host "[OK] Files copied from $sourcePath" -ForegroundColor Green
+# If using PackageTmp (full web package), copy everything
+if ($sourcePath -like "*PackageTmp*") {
+    Copy-Item -Path (Join-Path $sourcePath '*') -Destination $PhysicalPath -Recurse -Force
+    Write-Host "[OK] Full web package copied from $sourcePath" -ForegroundColor Green
+} else {
+    # If using bin folder, we need to copy bin + root content files separately
+    Write-Host "  Copying bin folder..." -ForegroundColor Gray
+
+    # Copy bin folder
+    $destBin = Join-Path $PhysicalPath "bin"
+    if (-not (Test-Path $destBin)) {
+        New-Item -ItemType Directory -Path $destBin -Force | Out-Null
+    }
+    Copy-Item -Path (Join-Path $sourcePath '*') -Destination $destBin -Recurse -Force
+
+    # Copy root content files (Web.config, index.html, app.js, favicon.png, rum-config.js, etc.)
+    Write-Host "  Copying content files (Web.config, index.html, app.js, etc.)..." -ForegroundColor Gray
+    $contentFiles = @(
+        "Web.config",
+        "index.html",
+        "app.js",
+        "favicon.png",
+        "rum-config.js"
+    )
+
+    foreach ($file in $contentFiles) {
+        $sourceFile = Join-Path "ApiFramework" $file
+        if (Test-Path $sourceFile) {
+            Copy-Item -Path $sourceFile -Destination $PhysicalPath -Force
+            Write-Host "    ✓ $file" -ForegroundColor Gray
+        } else {
+            Write-Host "    ⚠ $file not found (skipping)" -ForegroundColor Yellow
+        }
+    }
+
+    Write-Host "[OK] Files copied from bin folder + content files" -ForegroundColor Green
+}
 
 Write-Host "[5/8] Configuring Application Pool..." -ForegroundColor Yellow
 # Remove existing app pool if it exists

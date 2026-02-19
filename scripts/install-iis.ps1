@@ -94,7 +94,8 @@ foreach ($feature in $features) {
                 Write-Host ("  [OK]   {0} (enabled)" -f $feature) -ForegroundColor Green
                 $enabled++
             } else {
-                Write-Host ("  [FAIL] {0} (state: {1})" -f $feature, ($state2.State ?? "Unknown")) -ForegroundColor Red
+                $stateText = if ($state2 -and $state2.State) { $state2.State } else { "Unknown" }
+                Write-Host ("  [FAIL] {0} (state: {1})" -f $feature, $stateText) -ForegroundColor Red
                 $failed++
             }
         }

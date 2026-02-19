@@ -1,4 +1,5 @@
 using System;
+using System.Configuration;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -15,8 +16,11 @@ namespace DatadogMauiApi.Framework.Controllers
         [Route("rum-config.js")]
         public HttpResponseMessage GetRumConfig()
         {
-            // Check if RUM is enabled via environment variable (defaults to true)
-            var rumEnabled = Environment.GetEnvironmentVariable("DD_RUM_ENABLED");
+            // Check if RUM is enabled via appSettings (Web.config) or environment variable (defaults to true)
+            // Priority: Web.config appSettings > Environment Variable
+            var rumEnabled = ConfigurationManager.AppSettings["DD_RUM_ENABLED"]
+                             ?? Environment.GetEnvironmentVariable("DD_RUM_ENABLED");
+
             var isRumEnabled = string.IsNullOrEmpty(rumEnabled) ||
                                rumEnabled.Equals("true", StringComparison.OrdinalIgnoreCase) ||
                                rumEnabled.Equals("1", StringComparison.OrdinalIgnoreCase);

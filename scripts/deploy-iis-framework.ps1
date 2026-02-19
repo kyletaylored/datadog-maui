@@ -235,6 +235,16 @@ New-Website -Name $SiteName `
     -ApplicationPool $AppPoolName `
     -Force | Out-Null
 
+# ENFORCE + VERIFY (add this)
+Set-ItemProperty "IIS:\Sites\$SiteName" -Name physicalPath -Value $PhysicalPath
+
+$actualPath = (Get-ItemProperty "IIS:\Sites\$SiteName" -Name physicalPath).physicalPath
+Write-Host "[INFO] IIS PhysicalPath is: $actualPath" -ForegroundColor Cyan
+
+if ($actualPath -ne $PhysicalPath) {
+    throw "IIS PhysicalPath mismatch. Expected '$PhysicalPath' but got '$actualPath'"
+}
+
 Write-Host "[OK] Website created: $SiteName" -ForegroundColor Green
 
 Write-Host "[7/8] Configuring permissions..." -ForegroundColor Yellow

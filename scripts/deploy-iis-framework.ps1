@@ -212,14 +212,14 @@ if ($sourcePath -like "*PackageTmp*") {
     }
     Copy-Item -Path (Join-Path $sourcePath '*') -Destination $destBin -Recurse -Force
 
-    # Copy root content files (Web.config, index.html, app.js, favicon.png, rum-config.js, etc.)
+    # Copy root content files (Web.config, index.html, app.js, favicon.png, etc.)
+    # NOTE: rum-config.js is NOT copied - it's served dynamically by RumConfigController
     Write-Host "  Copying content files (Web.config, index.html, app.js, etc.)..." -ForegroundColor Gray
     $contentFiles = @(
         "Web.config",
         "index.html",
         "app.js",
-        "favicon.png",
-        "rum-config.js"
+        "favicon.png"
     )
 
     foreach ($file in $contentFiles) {
@@ -333,7 +333,7 @@ if (Test-Path $webConfigPath) {
         }
     }
 
-    # Set Datadog configuration
+    # Set Datadog APM configuration
     # if (-not [string]::IsNullOrEmpty($DdApiKey)) {
     #     Set-AppSetting "DD_API_KEY" $DdApiKey
     # }
@@ -342,9 +342,34 @@ if (Test-Path $webConfigPath) {
     Set-AppSetting "DD_VERSION" "1.0.0"
     Set-AppSetting "DD_TRACE_ENABLED" "true"
 
+    # Set Datadog RUM configuration (empty by default - set via IIS Manager Application Settings)
+    # These are used by RumConfigController to generate rum-config.js dynamically
+    if (-not (Get-AppSetting "DD_RUM_WEB_CLIENT_TOKEN")) {
+        Set-AppSetting "DD_RUM_WEB_CLIENT_TOKEN" ""
+    }
+    if (-not (Get-AppSetting "DD_RUM_WEB_APPLICATION_ID")) {
+        Set-AppSetting "DD_RUM_WEB_APPLICATION_ID" ""
+    }
+    if (-not (Get-AppSetting "DD_RUM_WEB_SERVICE")) {
+        Set-AppSetting "DD_RUM_WEB_SERVICE" "datadog-maui-web-framework"
+    }
+    if (-not (Get-AppSetting "DD_SITE")) {
+        Set-AppSetting "DD_SITE" "datadoghq.com"
+    }
+    Set-AppSetting "DD_RUM_ENABLED" "true"  # Set to "false" to disable RUM tracking
+
     # Add CLR Profiler settings for automatic instrumentation
     Set-AppSetting "COR_ENABLE_PROFILING" "1"
     Set-AppSetting "COR_PROFILER" "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+
+    # Helper function to get app setting value
+    function Get-AppSetting($key) {
+        $setting = $appSettings.add | Where-Object { $_.key -eq $key }
+        if ($setting) {
+            return $setting.value
+        }
+        return $null
+    }
 
     $webConfig.Save($webConfigPath)
     Write-Host "[OK] Datadog configuration updated in Web.config" -ForegroundColor Green

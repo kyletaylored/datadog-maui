@@ -50,7 +50,7 @@ function Stop-ProcessUsingPort {
             Write-Host "Port $Port is in use by PID $pid ($($p.ProcessName)). Stopping it..." -ForegroundColor Yellow
             Stop-Process -Id $pid -Force -ErrorAction Stop
         } catch {
-            Write-Warning "Couldn't stop PID $pid using port $Port: $($_.Exception.Message)"
+            Write-Warning "Couldn't stop PID $pid using port $Port : $($_.Exception.Message)"
         }
     }
 }

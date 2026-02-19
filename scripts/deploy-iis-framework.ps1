@@ -68,7 +68,6 @@ if (-not $netFramework) {
 $msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" `
     -requires Microsoft.Component.MSBuild `
     -latest `
-    -ErrorAction SilentlyContinue `
     -find "MSBuild\**\Bin\MSBuild.exe" | Select-Object -First 1
 
 if (-not $msbuild) {

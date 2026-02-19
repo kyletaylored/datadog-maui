@@ -235,13 +235,23 @@ New-Website -Name $SiteName `
     -ApplicationPool $AppPoolName `
     -Force | Out-Null
 
-# ENFORCE + VERIFY (add this)
-Set-ItemProperty "IIS:\Sites\$SiteName" -Name physicalPath -Value $PhysicalPath
+# Correct place: root vdir of the root application
+$filter = "/system.applicationHost/sites/site[@name='$SiteName']/application[@path='/']/virtualDirectory[@path='/']"
 
-$actualPath = (Get-ItemProperty "IIS:\Sites\$SiteName" -Name physicalPath).physicalPath
+# Force the physical path (authoritative)
+Set-WebConfigurationProperty -PSPath "MACHINE/WEBROOT/APPHOST" `
+    -Filter $filter `
+    -Name "physicalPath" `
+    -Value $PhysicalPath
+
+# Read it back (authoritative)
+$actualPath = (Get-WebConfigurationProperty -PSPath "MACHINE/WEBROOT/APPHOST" `
+    -Filter $filter `
+    -Name "physicalPath").Value
+
 Write-Host "[INFO] IIS PhysicalPath is: $actualPath" -ForegroundColor Cyan
 
-if ($actualPath -ne $PhysicalPath) {
+if ([string]::IsNullOrWhiteSpace($actualPath) -or ($actualPath -ne $PhysicalPath)) {
     throw "IIS PhysicalPath mismatch. Expected '$PhysicalPath' but got '$actualPath'"
 }
 

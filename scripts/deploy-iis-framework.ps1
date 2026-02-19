@@ -164,8 +164,14 @@ Get-ChildItem ApiFramework -Directory -Recurse -Depth 3 |
   Where-Object FullName -match '\\bin\\Release|\\obj\\Release' |
   Select-Object -ExpandProperty FullName   
 
-Write-Host "[3/8] Creating physical directory..." -ForegroundColor Yellow
-if (-not (Test-Path $PhysicalPath)) {
+Write-Host "[3/8] Preparing deployment directory..." -ForegroundColor Yellow
+if (Test-Path $PhysicalPath) {
+    Write-Host "  Cleaning existing deployment directory..." -ForegroundColor Gray
+    # Remove all contents but keep the directory (preserves permissions)
+    Get-ChildItem -Path $PhysicalPath -Recurse -Force | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    Write-Host "  Directory cleaned" -ForegroundColor Gray
+} else {
+    Write-Host "  Creating new deployment directory..." -ForegroundColor Gray
     New-Item -ItemType Directory -Path $PhysicalPath -Force | Out-Null
 }
 

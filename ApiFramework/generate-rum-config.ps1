@@ -45,7 +45,7 @@ console.warn('[Datadog] RUM config loaded with empty credentials - check .env fi
 $rumConfig = @{
     clientToken = ''
     applicationId = ''
-    service = 'datadog-maui-api-framework'
+    service = 'datadog-maui-web-framework'
     site = 'datadoghq.com'
     env = 'prod'
     version = '1.0.0'

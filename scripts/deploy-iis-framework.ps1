@@ -66,8 +66,10 @@ if (-not $netFramework) {
 
 # Check for MSBuild
 $msbuild = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" `
-    -latest -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe `
-    -ErrorAction SilentlyContinue | Select-Object -First 1
+    -requires Microsoft.Component.MSBuild `
+    -latest `
+    -ErrorAction SilentlyContinue `
+    -find "MSBuild\**\Bin\MSBuild.exe" | Select-Object -First 1
 
 if (-not $msbuild) {
     Write-Error "Error: MSBuild not found. Install Visual Studio or Build Tools"

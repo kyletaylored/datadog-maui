@@ -220,9 +220,9 @@ if ($sourcePath -like "*PackageTmp*") {
         $sourceFile = Join-Path "ApiFramework" $file
         if (Test-Path $sourceFile) {
             Copy-Item -Path $sourceFile -Destination $PhysicalPath -Force
-            Write-Host "    ✓ $file" -ForegroundColor Gray
+            Write-Host "    + $file" -ForegroundColor Gray
         } else {
-            Write-Host "    ⚠ $file not found (skipping)" -ForegroundColor Yellow
+            Write-Host "    ! $file not found (skipping)" -ForegroundColor Yellow
         }
     }
 

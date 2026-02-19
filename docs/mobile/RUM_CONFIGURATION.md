@@ -10,6 +10,84 @@ This project uses Datadog RUM to monitor user interactions across three platform
 
 All RUM credentials are managed via environment variables to keep sensitive values out of source control.
 
+## Enabling/Disabling RUM Tracking
+
+### Web (ApiFramework)
+
+The ApiFramework web portal supports runtime control of RUM tracking via the `DD_RUM_ENABLED` environment variable.
+
+**Default Behavior:** RUM tracking is **enabled** by default if the variable is not set.
+
+**To Disable RUM Tracking:**
+
+Set `DD_RUM_ENABLED` to `false` or `0`:
+
+```bash
+# Azure App Service
+az webapp config appsettings set \
+  --resource-group <your-resource-group> \
+  --name <your-webapp-name> \
+  --settings DD_RUM_ENABLED="false"
+
+# Docker Compose
+environment:
+  - DD_RUM_ENABLED=false
+
+# Local .env
+DD_RUM_ENABLED=false
+```
+
+**How It Works:**
+
+1. **[ApiFramework/Controllers/RumConfigController.cs](../../ApiFramework/Controllers/RumConfigController.cs)** checks the `DD_RUM_ENABLED` environment variable
+2. If disabled, returns a configuration object with `enabled: false`
+3. **[ApiFramework/index.html](../../ApiFramework/index.html)** checks `window.DD_RUM_CONFIG.enabled` before loading the Datadog RUM script
+4. Console message appears: `[Datadog] RUM tracking is disabled`
+
+**Example Output When Disabled:**
+
+```javascript
+// Browser console
+[Datadog] RUM tracking is disabled
+
+// rum-config.js response
+window.DD_RUM_CONFIG = {
+    enabled: false
+};
+```
+
+**Implementation Details:**
+
+```csharp
+// RumConfigController.cs
+var rumEnabled = Environment.GetEnvironmentVariable("DD_RUM_ENABLED");
+var isRumEnabled = string.IsNullOrEmpty(rumEnabled) ||
+                   rumEnabled.Equals("true", StringComparison.OrdinalIgnoreCase) ||
+                   rumEnabled.Equals("1", StringComparison.OrdinalIgnoreCase);
+```
+
+```html
+<!-- index.html -->
+<script>
+    var rumConfig = window.DD_RUM_CONFIG || {};
+
+    // Only load and initialize RUM if it's enabled (not explicitly disabled)
+    if (rumConfig.enabled !== false) {
+        // Load Datadog RUM script and initialize
+    } else {
+        console.info('[Datadog] RUM tracking is disabled');
+    }
+</script>
+```
+
+### Web (Api - Container)
+
+The containerized API (Api) has RUM credentials injected at Docker build time. To disable RUM tracking, omit the `DD_RUM_WEB_CLIENT_TOKEN` and `DD_RUM_WEB_APPLICATION_ID` build arguments during the Docker build process.
+
+### Mobile Apps (Android/iOS)
+
+Mobile apps load credentials from embedded config files or environment variables. To disable RUM tracking, do not provide the credentials during the build or runtime process.
+
 ## Configuration Files
 
 ### Environment Variables (.env)

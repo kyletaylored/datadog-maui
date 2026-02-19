@@ -50,7 +50,7 @@ function Stop-ProcessUsingPort {
             Write-Host "Port $Port is in use by PID $procId ($($p.ProcessName)). Stopping it..." -ForegroundColor Yellow
             Stop-Process -Id $procId -Force -ErrorAction Stop
         } catch {
-            Write-Warning "Couldn't stop PID $procId using port $Port: $($_.Exception.Message)"
+            Write-Warning "Couldn't stop PID $procId using port ${Port}: $($_.Exception.Message)"
         }
     }
 }
@@ -222,7 +222,7 @@ $conflicts = Get-WebBinding | Where-Object {
 }
 
 if ($conflicts) {
-    Write-Warning "Another IIS binding is using port $Port :"
+    Write-Warning "Another IIS binding is using port ${Port}:"
     $conflicts | ForEach-Object {
         Write-Host "  $($_.ItemXPath) -> $($_.bindingInformation)" -ForegroundColor Gray
     }

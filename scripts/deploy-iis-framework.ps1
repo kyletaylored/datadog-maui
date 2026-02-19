@@ -151,13 +151,29 @@ if (-not (Test-Path $PhysicalPath)) {
 }
 
 Write-Host "[4/8] Copying files to deployment directory..." -ForegroundColor Yellow
-$sourcePath = "ApiFramework\bin\Release"
-if (-not (Test-Path $sourcePath)) {
-    Write-Error "Error: Build output not found at $sourcePath"
+
+# Prefer a staged web output if it exists; otherwise use the build output folder
+$sourceCandidates = @()
+
+# Common web packaging folder (full site content)
+$packageTmp = "ApiFramework\obj\Release\Package\PackageTmp"
+if (Test-Path $packageTmp) { $sourceCandidates += $packageTmp }
+
+# The MSBuild-derived output folder (your case is ApiFramework\bin)
+if ($BuildOutputDir -and (Test-Path $BuildOutputDir)) { $sourceCandidates += $BuildOutputDir }
+
+# Last resort
+if (Test-Path "ApiFramework\bin") { $sourceCandidates += "ApiFramework\bin" }
+
+$sourcePath = $sourceCandidates | Select-Object -First 1
+
+if (-not $sourcePath -or -not (Test-Path $sourcePath)) {
+    Write-Error "Error: Build output not found. Checked: $($sourceCandidates -join ', ')"
     exit 1
 }
-Copy-Item -Path "$sourcePath\*" -Destination $PhysicalPath -Recurse -Force
-Write-Host "[OK] Files copied" -ForegroundColor Green
+
+Copy-Item -Path (Join-Path $sourcePath '*') -Destination $PhysicalPath -Recurse -Force
+Write-Host "[OK] Files copied from $sourcePath" -ForegroundColor Green
 
 Write-Host "[5/8] Configuring Application Pool..." -ForegroundColor Yellow
 # Remove existing app pool if it exists

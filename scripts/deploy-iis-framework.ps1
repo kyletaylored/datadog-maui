@@ -36,6 +36,25 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Helper function to stop any process using the specified port (to free it up for IIS)
+function Stop-ProcessUsingPort {
+    param([Parameter(Mandatory)][int]$Port)
+
+    $conns = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
+    if (-not $conns) { return }
+
+    $pids = $conns | Select-Object -ExpandProperty OwningProcess -Unique
+    foreach ($pid in $pids) {
+        try {
+            $p = Get-Process -Id $pid -ErrorAction Stop
+            Write-Host "Port $Port is in use by PID $pid ($($p.ProcessName)). Stopping it..." -ForegroundColor Yellow
+            Stop-Process -Id $pid -Force -ErrorAction Stop
+        } catch {
+            Write-Warning "Couldn't stop PID $pid using port $Port: $($_.Exception.Message)"
+        }
+    }
+}
+
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host "Datadog MAUI API (.NET Framework 4.8)" -ForegroundColor Cyan
 Write-Host "IIS Deployment Script" -ForegroundColor Cyan
@@ -295,6 +314,14 @@ Write-Host ""
 $site = Get-Website -Name $SiteName
 if ($site.State -ne "Started") {
     Write-Host "Starting website..." -ForegroundColor Yellow
+
+    # Make sure nothing else is listening on the port
+    Stop-ProcessUsingPort -Port $Port
+
+    # Restart WAS/W3SVC to ensure bindings are refreshed (helps after remove/create)
+    Restart-Service WAS -Force -ErrorAction SilentlyContinue
+    Restart-Service W3SVC -Force -ErrorAction SilentlyContinue
+
     Start-Website -Name $SiteName
     Write-Host "[OK] Website started" -ForegroundColor Green
 }

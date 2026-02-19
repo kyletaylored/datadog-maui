@@ -222,7 +222,7 @@ $conflicts = Get-WebBinding | Where-Object {
 }
 
 if ($conflicts) {
-    Write-Warning "Another IIS binding is using port $Port:"
+    Write-Warning "Another IIS binding is using port $Port :"
     $conflicts | ForEach-Object {
         Write-Host "  $($_.ItemXPath) -> $($_.bindingInformation)" -ForegroundColor Gray
     }

@@ -43,14 +43,14 @@ function Stop-ProcessUsingPort {
     $conns = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
     if (-not $conns) { return }
 
-    $pids = $conns | Select-Object -ExpandProperty OwningProcess -Unique
-    foreach ($pid in $pids) {
+    $procIds = $conns | Select-Object -ExpandProperty OwningProcess -Unique
+    foreach ($procId in $procIds) {
         try {
-            $p = Get-Process -Id $pid -ErrorAction Stop
-            Write-Host "Port $Port is in use by PID $pid ($($p.ProcessName)). Stopping it..." -ForegroundColor Yellow
-            Stop-Process -Id $pid -Force -ErrorAction Stop
+            $p = Get-Process -Id $procId -ErrorAction Stop
+            Write-Host "Port $Port is in use by PID $procId ($($p.ProcessName)). Stopping it..." -ForegroundColor Yellow
+            Stop-Process -Id $procId -Force -ErrorAction Stop
         } catch {
-            Write-Warning "Couldn't stop PID $pid using port $Port : $($_.Exception.Message)"
+            Write-Warning "Couldn't stop PID $procId using port $Port: $($_.Exception.Message)"
         }
     }
 }

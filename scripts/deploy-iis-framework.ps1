@@ -106,14 +106,39 @@ Write-Host "[OK] NuGet restore complete" -ForegroundColor Green
 Write-Host "[2/8] Building application..." -ForegroundColor Yellow
 Push-Location ApiFramework
 try {
-    & $msbuild /p:Configuration=Release /verbosity:minimal
+    $project = ".\DatadogMauiApi.Framework.csproj"
+
+    # Ask MSBuild where OutputPath is for Release
+    $outputPath = & $msbuild $project /nologo /v:q /t:GetTargetPath /p:Configuration=Release `
+        /p:CustomAfterMicrosoftCommonTargets="" 2>$null |
+        Select-String -Pattern '->\s*(.+)$' |
+        ForEach-Object { $_.Matches[0].Groups[1].Value } |
+        Select-Object -First 1
+
+    # Build Release
+    & $msbuild $project /p:Configuration=Release /verbosity:minimal
     if ($LASTEXITCODE -ne 0) {
         throw "Build failed"
     }
-} finally {
+
+    # Fallback: if GetTargetPath parsing didn't work, infer from the built DLL line pattern you saw
+    if (-not $outputPath) {
+        $dll = Get-ChildItem -Path ".\bin" -Filter "*.dll" -File -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($dll) { $outputPath = $dll.FullName }
+    }
+
+    if (-not $outputPath) {
+        throw "Could not determine build output path."
+    }
+
+    $script:BuildOutputDir = Split-Path -Parent $outputPath
+}
+finally {
     Pop-Location
 }
+
 Write-Host "[OK] Build complete" -ForegroundColor Green
+Write-Host "Build output directory: $BuildOutputDir" -ForegroundColor Gray
 
 # Optional: List built files for debugging
 Get-ChildItem ApiFramework -Directory -Recurse -Depth 3 |

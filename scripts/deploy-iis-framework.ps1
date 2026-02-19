@@ -100,7 +100,7 @@ try {
 } finally {
     Pop-Location
 }
-Write-Host "NuGet restore complete" -ForegroundColor Green
+Write-Host "[OK] NuGet restore complete" -ForegroundColor Green
 
 Write-Host "[2/8] Building application..." -ForegroundColor Yellow
 Push-Location ApiFramework
@@ -112,7 +112,12 @@ try {
 } finally {
     Pop-Location
 }
-Write-Host "Build complete" -ForegroundColor Green
+Write-Host "[OK] Build complete" -ForegroundColor Green
+
+# Optional: List built files for debugging
+Get-ChildItem ApiFramework -Directory -Recurse -Depth 3 |
+  Where-Object FullName -match '\\bin\\Release|\\obj\\Release' |
+  Select-Object -ExpandProperty FullName   
 
 Write-Host "[3/8] Creating physical directory..." -ForegroundColor Yellow
 if (-not (Test-Path $PhysicalPath)) {
@@ -126,7 +131,7 @@ if (-not (Test-Path $sourcePath)) {
     exit 1
 }
 Copy-Item -Path "$sourcePath\*" -Destination $PhysicalPath -Recurse -Force
-Write-Host "Files copied" -ForegroundColor Green
+Write-Host "[OK] Files copied" -ForegroundColor Green
 
 Write-Host "[5/8] Configuring Application Pool..." -ForegroundColor Yellow
 # Remove existing app pool if it exists
@@ -141,7 +146,7 @@ Set-ItemProperty -Path "IIS:\AppPools\$AppPoolName" -Name "managedRuntimeVersion
 Set-ItemProperty -Path "IIS:\AppPools\$AppPoolName" -Name "managedPipelineMode" -Value "Integrated"
 Set-ItemProperty -Path "IIS:\AppPools\$AppPoolName" -Name "processModel.identityType" -Value "ApplicationPoolIdentity"
 Set-ItemProperty -Path "IIS:\AppPools\$AppPoolName" -Name "enable32BitAppOnWin64" -Value $false
-Write-Host "App pool created: $AppPoolName (.NET Framework v4.0)" -ForegroundColor Green
+Write-Host "[OK] App pool created: $AppPoolName (.NET Framework v4.0)" -ForegroundColor Green
 
 Write-Host "[6/8] Configuring Website..." -ForegroundColor Yellow
 # Remove existing website if it exists
@@ -157,7 +162,7 @@ New-Website -Name $SiteName `
     -ApplicationPool $AppPoolName `
     -Force | Out-Null
 
-Write-Host "Website created: $SiteName" -ForegroundColor Green
+Write-Host "[OK] Website created: $SiteName" -ForegroundColor Green
 
 Write-Host "[7/8] Configuring permissions..." -ForegroundColor Yellow
 $acl = Get-Acl $PhysicalPath
@@ -166,7 +171,7 @@ $permission = $appPoolIdentity, "ReadAndExecute", "ContainerInherit,ObjectInheri
 $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule $permission
 $acl.SetAccessRule($accessRule)
 Set-Acl $PhysicalPath $acl
-Write-Host "Permissions configured" -ForegroundColor Green
+Write-Host "[OK] Permissions configured" -ForegroundColor Green
 
 Write-Host "[8/8] Configuring Datadog environment..." -ForegroundColor Yellow
 $webConfigPath = Join-Path $PhysicalPath "Web.config"
@@ -203,7 +208,7 @@ if (Test-Path $webConfigPath) {
     Set-AppSetting "COR_PROFILER" "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
 
     $webConfig.Save($webConfigPath)
-    Write-Host "Datadog configuration updated in Web.config" -ForegroundColor Green
+    Write-Host "[OK] Datadog configuration updated in Web.config" -ForegroundColor Green
 } else {
     Write-Warning "Warning: Web.config not found. Datadog automatic instrumentation may not work."
 }
@@ -249,7 +254,7 @@ $site = Get-Website -Name $SiteName
 if ($site.State -ne "Started") {
     Write-Host "Starting website..." -ForegroundColor Yellow
     Start-Website -Name $SiteName
-    Write-Host "Website started" -ForegroundColor Green
+    Write-Host "[OK] Website started" -ForegroundColor Green
 }
 
 # Test the endpoint
@@ -257,7 +262,7 @@ Write-Host "Testing endpoint..." -ForegroundColor Yellow
 Start-Sleep -Seconds 3
 try {
     $response = Invoke-RestMethod "http://localhost:$Port/health" -TimeoutSec 5
-    Write-Host 'Health check passed: ' + $($response.status) -ForegroundColor Green
+    Write-Host '[OK] Health check passed: ' + $($response.status) -ForegroundColor Green
 } catch {
     Write-Warning 'Warning: Health check failed. Check IIS logs for details.'
     Write-Host 'Troubleshooting:' -ForegroundColor Yellow

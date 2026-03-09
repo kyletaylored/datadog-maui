@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Text;
 using Datadog.Trace;
 using DatadogMauiApi.Models;
 using DatadogMauiApi.Services;
@@ -41,6 +42,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddSingleton<SessionManager>();
 builder.Services.AddSingleton<ProductStore>();
 builder.Services.AddSingleton<CartStore>();
+builder.Services.AddHttpClient("proxy");
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -845,6 +847,90 @@ app.MapDelete("/carts/{id:int}", (int id, CartStore store, HttpContext context, 
     return Results.Ok(deleted);
 })
 .WithName("DeleteCart");
+
+// Outbound proxy endpoint - proxies requests through the .NET backend for trace correlation
+app.MapPost("/proxy", async (ProxyRequest request, IHttpClientFactory httpClientFactory, ILogger<Program> logger) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Url))
+        return Results.BadRequest(new { error = "URL is required" });
+
+    if (!Uri.TryCreate(request.Url, UriKind.Absolute, out var uri) ||
+        (uri.Scheme != "http" && uri.Scheme != "https"))
+        return Results.BadRequest(new { error = "Invalid URL. Must be an absolute http/https URL." });
+
+    var method = string.IsNullOrWhiteSpace(request.Method) ? "GET" : request.Method.ToUpperInvariant();
+    if (method != "GET" && method != "POST" && method != "HEAD")
+        return Results.BadRequest(new { error = "Unsupported method. Use GET, POST, or HEAD." });
+
+    var activeScope = Tracer.Instance.ActiveScope;
+    if (activeScope != null)
+    {
+        activeScope.Span.ResourceName = $"{method} /proxy";
+        activeScope.Span.SetTag("custom.operation.type", "outbound_proxy");
+        activeScope.Span.SetTag("custom.proxy.target_url", request.Url);
+        activeScope.Span.SetTag("custom.proxy.method", method);
+    }
+
+    var client = httpClientFactory.CreateClient("proxy");
+    var stopwatch = Stopwatch.StartNew();
+
+    try
+    {
+        var httpRequest = new HttpRequestMessage(new HttpMethod(method), uri);
+        var response = await client.SendAsync(httpRequest);
+        stopwatch.Stop();
+
+        var contentType = response.Content.Headers.ContentType?.ToString() ?? "unknown";
+        var bodyBytes = await response.Content.ReadAsByteArrayAsync();
+        var body = bodyBytes.Length > 4096
+            ? Encoding.UTF8.GetString(bodyBytes, 0, 4096) + "\n... [truncated]"
+            : Encoding.UTF8.GetString(bodyBytes);
+
+        if (activeScope != null)
+        {
+            activeScope.Span.SetTag("custom.proxy.status_code", ((int)response.StatusCode).ToString());
+            activeScope.Span.SetTag("custom.proxy.elapsed_ms", stopwatch.ElapsedMilliseconds.ToString());
+            activeScope.Span.SetTag("custom.proxy.content_type", contentType);
+            activeScope.Span.SetTag("custom.proxy.response_size", bodyBytes.Length.ToString());
+        }
+
+        logger.LogInformation("[Proxy] {Method} {Url} -> {StatusCode} in {Elapsed}ms",
+            method, request.Url, (int)response.StatusCode, stopwatch.ElapsedMilliseconds);
+
+        return Results.Ok(new
+        {
+            statusCode = (int)response.StatusCode,
+            statusText = response.StatusCode.ToString(),
+            contentType,
+            elapsed = stopwatch.ElapsedMilliseconds,
+            url = request.Url,
+            body
+        });
+    }
+    catch (Exception ex)
+    {
+        stopwatch.Stop();
+
+        if (activeScope != null)
+        {
+            activeScope.Span.Error = true;
+            activeScope.Span.SetTag("custom.proxy.error", ex.Message);
+        }
+
+        logger.LogError("[Proxy] Error proxying {Method} {Url}: {Error}", method, request.Url, ex.Message);
+
+        return Results.Ok(new
+        {
+            statusCode = 0,
+            statusText = "Error",
+            contentType = "text/plain",
+            elapsed = stopwatch.ElapsedMilliseconds,
+            url = request.Url,
+            body = $"Error: {ex.Message}"
+        });
+    }
+})
+.WithName("ProxyRequest");
 
 app.Logger.LogInformation("API Starting on port 8080...");
 app.Logger.LogInformation("Web Portal: http://localhost:5000");

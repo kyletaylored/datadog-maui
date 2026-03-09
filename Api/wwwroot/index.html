@@ -557,6 +557,22 @@
             </div>
         </div>
 
+        <!-- Outbound Proxy Card (Full Width) -->
+        <div class="card" style="margin-top: 30px;">
+            <h2>🔗 Outbound Request Proxy</h2>
+            <p>Send a request through the .NET backend to trace outbound HTTP calls to 3rd party services.</p>
+            <div class="filter-group" style="margin-top: 15px;">
+                <select id="proxy-method" style="flex: 0 0 100px; min-width: 100px;">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="HEAD">HEAD</option>
+                </select>
+                <input type="url" id="proxy-url" placeholder="https://httpbin.org/get" value="https://httpbin.org/get">
+                <button onclick="sendProxy()">Send</button>
+            </div>
+            <div id="proxy-response"></div>
+        </div>
+
         <footer>
             <p>
                 Built with ❤️ for Datadog Integration Testing

@@ -689,6 +689,57 @@ async function loadOrders() {
     }
 }
 
+// Outbound proxy tester
+async function sendProxy() {
+    const url = document.getElementById('proxy-url').value.trim();
+    const method = document.getElementById('proxy-method').value;
+    const responseDiv = document.getElementById('proxy-response');
+
+    if (!url) {
+        alert('Please enter a URL');
+        return;
+    }
+
+    responseDiv.innerHTML = '<div class="status loading">Sending...</div>';
+
+    try {
+        const res = await fetch(`${API_BASE}/proxy`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, method })
+        });
+
+        const data = await res.json();
+
+        if (window.DD_RUM) {
+            window.DD_RUM.addAction('proxy_request', { url, method, statusCode: data.statusCode });
+        }
+
+        const statusClass = data.statusCode >= 200 && data.statusCode < 300 ? 'healthy' : 'error';
+        responseDiv.innerHTML = `
+            <div style="margin-top: 15px;">
+                <div class="status ${statusClass}">${data.statusCode} ${data.statusText}</div>
+                <div class="trace-info" style="margin-top: 10px;">
+                    <strong>URL:</strong> ${escapeHtml(data.url)}<br>
+                    <strong>Content-Type:</strong> ${escapeHtml(data.contentType)}<br>
+                    <strong>Elapsed:</strong> ${data.elapsed}ms
+                </div>
+                <div class="response-box" style="max-height: 300px; margin-top: 10px; white-space: pre-wrap; word-break: break-all;">${escapeHtml(data.body)}</div>
+            </div>`;
+    } catch (error) {
+        responseDiv.innerHTML = `<div class="status error">Error: ${escapeHtml(error.message)}</div>`;
+    }
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
+
 // Auto-check health and load initial data on page load
 window.addEventListener('load', () => {
     initAuth();

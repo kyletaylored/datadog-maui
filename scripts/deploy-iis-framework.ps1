@@ -28,7 +28,7 @@
 param(
     [string]$SiteName = "DatadogMauiApiFramework",
     [string]$AppPoolName = "DatadogMauiApiFrameworkPool",
-    [int]$Port = 5001,
+    [int]$Port = 5021,
     [string]$PhysicalPath = "C:\inetpub\wwwroot\datadog-maui-api-framework",
     [string]$DdApiKey = "",
     [string]$DdEnv = "dev"

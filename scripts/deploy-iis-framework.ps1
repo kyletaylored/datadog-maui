@@ -14,7 +14,7 @@
 .PARAMETER AppPoolName
     Name of the IIS application pool (default: DatadogMauiApiFrameworkPool)
 .PARAMETER Port
-    Port number for the website (default: 5001)
+    Port number for the website (default: 5021)
 .PARAMETER PhysicalPath
     Physical path where the application will be deployed (default: C:\inetpub\wwwroot\datadog-maui-api-framework)
 .PARAMETER DdApiKey
@@ -333,21 +333,44 @@ if (Test-Path $webConfigPath) {
         }
     }
 
+    # Load values from .env file if it exists (repo root)
+    $envFile = Join-Path (Get-Location) ".env"
+    $envValues = @{}
+    if (Test-Path $envFile) {
+        Write-Host "  Loading configuration from .env file..." -ForegroundColor Gray
+        Get-Content $envFile | ForEach-Object {
+            $line = $_.Trim()
+            if ($line -notmatch '^#' -and $line -ne '' -and $line -match '^([^=]+)=(.*)$') {
+                $envValues[$matches[1].Trim()] = $matches[2].Trim()
+            }
+        }
+        Write-Host "  Loaded $($envValues.Count) values from .env" -ForegroundColor Gray
+    } else {
+        Write-Host "  No .env file found - RUM credentials will be empty" -ForegroundColor Yellow
+    }
+
+    function Get-EnvValue($key, $default = "") {
+        if ($envValues.ContainsKey($key) -and -not [string]::IsNullOrEmpty($envValues[$key])) {
+            return $envValues[$key]
+        }
+        return $default
+    }
+
     # Set Datadog APM configuration
     # if (-not [string]::IsNullOrEmpty($DdApiKey)) {
     #     Set-AppSetting "DD_API_KEY" $DdApiKey
     # }
-    Set-AppSetting "DD_ENV" $DdEnv
+    Set-AppSetting "DD_ENV" (Get-EnvValue "DD_ENV" $DdEnv)
     Set-AppSetting "DD_SERVICE" "datadog-maui-api-framework"
-    Set-AppSetting "DD_VERSION" "1.0.0"
+    Set-AppSetting "DD_VERSION" (Get-EnvValue "DD_VERSION" "1.0.0")
     Set-AppSetting "DD_TRACE_ENABLED" "true"
 
-    # Set Datadog RUM configuration (empty by default - set via IIS Manager Application Settings)
-    # These are used by RumConfigController to generate rum-config.js dynamically
-    Set-AppSetting "DD_RUM_WEB_CLIENT_TOKEN" ""
-    Set-AppSetting "DD_RUM_WEB_APPLICATION_ID" ""
-    Set-AppSetting "DD_RUM_WEB_SERVICE" "datadog-maui-web-framework"
-    Set-AppSetting "DD_SITE" "datadoghq.com"
+    # Set Datadog RUM configuration - loaded from .env, fallback to empty (set via IIS Manager)
+    # These are read at runtime by RumConfigController to generate rum-config.js dynamically
+    Set-AppSetting "DD_RUM_WEB_CLIENT_TOKEN" (Get-EnvValue "DD_RUM_WEB_CLIENT_TOKEN")
+    Set-AppSetting "DD_RUM_WEB_APPLICATION_ID" (Get-EnvValue "DD_RUM_WEB_APPLICATION_ID")
+    Set-AppSetting "DD_RUM_WEB_SERVICE" (Get-EnvValue "DD_RUM_WEB_SERVICE" "datadog-maui-web-framework")
+    Set-AppSetting "DD_SITE" (Get-EnvValue "DD_SITE" "datadoghq.com")
     Set-AppSetting "DD_RUM_ENABLED" "true"  # Set to "false" to disable RUM tracking
 
     # Add CLR Profiler settings for automatic instrumentation
